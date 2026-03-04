@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Clientes Ativos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        forest: {
+                            950: '#040906', /* Fundo profundo Preto Forrest */
+                            900: '#09120c', /* Fundo de painéis e cards */
+                            800: '#122217', /* Bordas elegantes e hovers */
+                            accent: '#10b981', /* Verde esmeralda elegante */
+                            light: '#ecfdf5', /* Texto principal brilhante */
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar for better appearance */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #040906; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #122217; 
+            border-radius: 4px;
+            border: 1px solid #040906;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #1b3323; 
+        }
+        .table-container {
+            max-height: calc(100vh - 200px);
+        }
+    </style>
+</head>
+<body class="bg-forest-950 text-slate-300 font-sans antialiased p-4 md:p-8 selection:bg-forest-accent selection:text-white">
+
+    <div class="max-w-7xl mx-auto space-y-6">
+        <!-- Header Section -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-forest-900 p-6 rounded-2xl shadow-2xl border border-forest-800 relative overflow-hidden">
+            <!-- Efeito de brilho subtil de fundo -->
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-forest-accent to-transparent opacity-20"></div>
+            
+            <div class="relative z-10">
+                <h1 class="text-2xl font-bold text-forest-light tracking-tight">Lista de Clientes Ativos</h1>
+                <p class="text-sm text-emerald-200/60 mt-1">Gere e pesquise os clientes G30 e Lions Car Club</p>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto relative z-10">
+                <div class="relative w-full md:w-80">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <svg class="w-4 h-4 text-emerald-700" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
+                        </svg>
+                    </div>
+                    <input type="text" id="searchInput" class="bg-forest-950 border border-forest-800 text-forest-light text-sm rounded-lg focus:ring-forest-accent focus:border-forest-accent block w-full pl-10 p-2.5 transition-colors shadow-inner placeholder-emerald-800/60" placeholder="Pesquisar loja, proprietário, CNPJ..." onkeyup="filterTable()">
+                </div>
+                <div class="flex items-center justify-center bg-forest-800/60 text-forest-accent text-sm font-semibold px-4 py-2 rounded-lg border border-forest-800 whitespace-nowrap shadow-sm backdrop-blur-sm">
+                    <span id="countDisplay">A carregar...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Section -->
+        <div class="bg-forest-900 rounded-2xl shadow-2xl border border-forest-800 overflow-hidden">
+            <div class="overflow-x-auto table-container">
+                <table id="clientsTable" class="w-full text-sm text-left text-slate-300">
+                    <thead class="text-xs text-emerald-600/80 uppercase tracking-wider bg-[#070e0a] sticky top-0 shadow-md border-b border-forest-800 z-10">
+                        <tr>
+                            <th scope="col" class="px-6 py-4 font-semibold whitespace-nowrap">Programa</th>
+                            <th scope="col" class="px-6 py-4 font-semibold whitespace-nowrap">Proprietário</th>
+                            <th scope="col" class="px-6 py-4 font-semibold whitespace-nowrap">Nome da Loja</th>
+                            <th scope="col" class="px-6 py-4 font-semibold whitespace-nowrap">CNPJ</th>
+                            <th scope="col" class="px-6 py-4 font-semibold whitespace-nowrap">ID</th>
+                            <th scope="col" class="px-6 py-4 font-semibold whitespace-nowrap text-center">Instagram</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-forest-800">
+                        <!-- Os dados serão injetados aqui -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Empty State -->
+            <div id="emptyState" class="hidden flex-col items-center justify-center py-16 px-4 text-center">
+                <div class="bg-forest-800/30 p-4 rounded-full mb-4 border border-forest-800/50">
+                    <svg class="w-10 h-10 text-emerald-700/50" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <h3 class="text-lg font-medium text-forest-light">Nenhum cliente encontrado</h3>
+                <p class="text-sm text-emerald-200/50 mt-1">Tente utilizar outros termos de pesquisa.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ocultamos os dados em bruto num script block para não interferir com a UI -->
+    <script type="text/csv" id="csvData">
+Programa G30,Ana Carolina Medeiros,Jorge Eduardo Moreira & CIA LTDA-ME,Jorge Eduardo I Du Veículos,09.474.963/0001-00,40027,https://www.instagram.com/du.veiculos/,https://www.instagram.com/du.veiculos/
+Programa G30,Ana Carolina Medeiros,Dante Comercio de Automoveis LTDA,Kauan I Dante Automóveis,42.945.556/0001-09,40054,@danteautomoveisbtu,https://www.instagram.com//
+Programa G30,Ana Carolina Medeiros,STARK MOTORS LTDA,Arthur I STARK MOTORS,57.081.836/0001-85,40763,starkmotors.ura,https://www.instagram.com//
+Programa G30,Ana Carolina Medeiros,C D DA S BRASIL C D DA SILVA BRASIL,Juliano | Autoplusbr,44.012.849/0001-50,40783,https://www.instagram.com/autoplus.pr/,https://www.instagram.com/autoplus.pr/
+Programa G30,Ana Carolina Medeiros,Rm&P Comercio de Veiculos LTDA,Rogerio Martin I Aurora Veiculos,62.739.187/0001-05,41348,.,@auroraveiculosbh
+Programa G30,Ana Carolina Medeiros,JC DE SOUZA LTDA,JULIO CESAR I JC Prime,43.828.512/0001-53,41422,https://www.instagram.com/jcprime_rs/,
+Programa G30,Ana Carolina Medeiros,DIEDRICH E GIOVANELLA NEGOCIOS AUTOMOTIVOS LTDA,Thales e Diego I Digicar Automóveis,48514531000129,41446,https://www.instagram.com/digicar_automoveis/,
+Programa G30,Ana Carolina Medeiros,V K COMERCIO DE VEICULOS LTDA,Vanderlei Vieira I VK Automoveis,27.695.757/0001-01,41740,.,
+Programa G30,Ana Carolina Medeiros,MIX MULTIMARCAS VEICULOS E MOTOS LTDA,Edson Castanha I EloMixMultimarcas,35726947000169,42327,https://www.instagram.com/elomixmultimarcas/,https://www.instagram.com/elomixmultimarcas/
+Programa G30,Ana Carolina Medeiros,RENATO WEBER COMERCIO DE VEICULOS LTDA,Renato Weber I Online Carros,37.530.149/0001-92,42861,https://www.instagram.com/onlinecarros.com.br/,
+Programa G30,Ana Carolina Medeiros,DADO CAR VEICULOS LTDA,Luiz Eduardo I Dado Car,48.146.131/0001-08,43596,https://www.instagram.com/dadocar_/,
+Programa G30,Ana Carolina Medeiros,AL IRMAOS AGUIAR AUTOMOVEIS LTDA,Alessandro I Irmãos Aguiar Automóveis,51.152.616/0001-19,44167,https://www.instagram.com/irmaosaguiar_automoveis/,
+Programa G30,Ana Carolina Medeiros,Itália Veículos Ltda,Itália Veículos Ltda,33.765.133/0001-08,44663,https://www.instagram.com/italiaveiculosvni/,
+Programa G30,Ana Carolina Medeiros,SHEKINA COMERCIO E LOCACAO DE VEICULOS LTDA,Daniel | shop car multimarcas - PR,60.844.543/0001-17,44769,@shopcarmultimarcaschz,https://www.instagram.com//
+Programa G30,Ana Carolina Medeiros,AUTENZA VEICULOS LTDA.,Lucas | autenza veiculos,61.197.295/0001-22,46084,https://www.instagram.com/autenzaveiculos/,https://www.instagram.com/autenzaveiculos/
+Programa G30,Ana Carolina Medeiros,SOFIX CAR COMERCIO DE VEICULOS LTDA,Eglae I Sofix Car,18.956.420/0001-01,46244,https://www.instagram.com/sofixcar.oficial/,https://www.instagram.com//
+Programa G30,Ana Carolina Medeiros,FLCP - COMERCIO DE VEICULOS LTDA,Porcino Neto I Canal Automóveis,36.886.906/0001-00,46442,https://www.instagram.com/canal.automoveis?igsh=MWl2b3JqeWhlam9zcQ==,
+Programa G30,Ana Carolina Medeiros,PIT STOP O AUTO CENTER DE SAO GONCALO LTDA,Cynthia I Prime Multimarcas,18.293.509/0001-35,46510,https://www.instagram.com/primemultimarcasltda/,https://www.instagram.com//
+Programa G30,Ana Carolina Medeiros,K2 MULTIMARCAS LTDA,Rogger Zampieri,51.179.146/0001-87,47257,k2multimarcasnm,https://www.instagram.com//
+Programa G30,Ana Carolina Medeiros,REVENDA VEICULOS LTDA,João Paulo I Revenda Veiculos,36.705.676/0001-28,47262,https://www.instagram.com/revendaveiculos_sinop/,https://www.instagram.com/revendaveiculos_sinop/
+Lions Car Club,anderson silva,Linkcar Multimarcas Comercio de Veiculos LTDA,EDER SOUZA Linkcar,34.907.579/0001-92,11746,,https://www.instagram.com/linkcarautomoveis/
+Lions Car Club,anderson silva,Londrina Comercio de Carros e Servicos Ltda,Armando (Neto) (Londrina Carros),22.918.047/0001-71,11779,https://www.instagram.com/londrina_carros/,https://www.instagram.com/londrina_carros/
+Lions Car Club,anderson silva,JLCAR COMERCIO DE VEICULOS LTDA - Passeio Veículos,Alexandre e Priscila Passeio Veículos,49.042.499/0001-99,11782,,
+Lions Car Club,anderson silva,MOURAVEL VEICULOS LTDA,MARCOS E LIGIA - Moura veiculos,19.473.574.0001/05,11784,,
+Programa G30,anderson silva,HR Concept car ltda,Hugo | HR,53190030/0001-74,17159,https://www.instagram.com/hrconceptcar/,https://www.instagram.com/hrconceptcar/
+Lions Car Club,anderson silva,REMA VEICULOS LTDA,REMA VEICULOS LTDA,13884356000187,42244,https://www.instagram.com/rema_veiculos/,https://www.instagram.com//
+Programa G30,anderson silva,,portelaneto@hotmail.com - PORTELA (cópia),27212481000155,42521,,
+Programa G30,anderson silva,Zerado Automoveis LTDA,Zerado Automoveis LTDA,27212481000155,42532,.,
+Lions Car Club,anderson silva,EVIDENCE MOTORS EIRELI,EVIDENCE MOTORS EIRELI,23.027.803/0001-35,42781,,
+Programa G30,anderson silva,FP COMERCIO DE VEICULOS E INTERMEDIACAO LTDA,FP COMERCIO DE VEICULOS E INTERMEDIACAO LTDA,28.040.841/0001-41,42826,https://www.instagram.com/maracanauveiculosoficial/,
+Programa G30,anderson silva,Luis Motors Multimarcas LTDA,Luis Motors Multimarcas LTDA,60284126000167,47300,luismotorsmultimarcas,https://www.instagram.com//
+Lions Car Club,Carla,Ronaldo Leonardo Alcantara,Ronaldo Leonardo Alcantara,50.105.031/0001-85,38519,,https://www.instagram.com/zayamotors/
+Programa G30,Carla,Goiânia Veículos Rondonopolis Ltda,Goiânia Veículos Rondonopolis Ltda,07.701.265/0001-66,38704,https://www.instagram.com/goianiaveiculosroomt/,
+Programa G30,Caroline LIma,cruz veículos Ltda,cruz veículos Ltda,36556938/0001-30,39810,https://www.instagram.com/cruz.veiculos/,
+Programa G30,Caroline LIma,CESAR A. A. PINHEIRO VEICULOS ME,Texas Veiculos,43.393.202.0001/53,40567,https://www.instagram.com/texas_veiculos_/,
+Programa G30,Caroline LIma,JP COMERCIO DE VEICULOS LTDA,JP COMERCIO DE VEICULOS LTDA,35874877000196,42241,.,https://www.instagram.com/jpveiculosjnce/
+Programa G30,Caroline LIma,BY CARS TATUAPE MULTIMARCAS LTDA,RB MULTIMARCAS,30.081.730/0001-25,42651,,https://www.instagram.com/rbmultimarcas.sp/
+Programa G30,Caroline LIma,Madricar Automoveis Ltda,Madricar Automoveis Ltda,60.627.213/0001-70,42715,https://www.instagram.com/madricarautomoveis/,https://www.instagram.com//
+Programa G30,Caroline LIma,"TOP CAR SEMINOVOS, LOCACAO E COMERCIO DE VEICULOS LTDA",TOP CAR SEMINOVOS,23.170.003/0001-79,42771,.,https://www.instagram.com//
+Programa G30,Caroline LIma,AUTOGIRO COMERCIO DE VEICULOS LTDA,AUTOGIRO,04.649.005/0001-09,42794,https://www.instagram.com/autogirosm/,https://www.instagram.com/autogirosm/
+Programa G30,Caroline LIma,CAR VEICULOS LTDA,CAR PRIME,35101580000198,43503,,https://www.instagram.com/carhttps://www.instagram.com/carprime.veiculos/prime.veiculos/
+Programa G30,Caroline LIma,EMERSON ALLAN VEICULOS LTDA,EMERSON ALLAN VEICULOS LTDA,47.073.898/0001-91,44089,allancorretoramultimarcas,https://www.instagram.com/allancorretoramultimarcas/
+Programa G30,Caroline LIma,AUTOSHOW SELECTION LTDA,Maxximum Veículos,61.526.400/0001-20,44150,@autoshowselection,https://www.instagram.com//
+Programa G30,Caroline LIma,AUTOCON VEICULOS LTDA,AUTOCON VEICULOS,51.932.249/0001-76,44233,https://www.instagram.com/autocon.tradecar?igsh=MTdsZWM4OGg2cGRzOQ%3D%3D&utm_source=qr,
+Lions Car Club,Caroline LIma,M3 VEICULOS LTDA,M3 VEICULOS,26.629.365/0001-73,44271,https://www.instagram.com/m3veiculos/,
+Programa G30,Caroline LIma,GARAGE 4 MOTORS LTDA,GARAGE 4 MOTORS LTDA,36.553.109/0001-01,44902,garage4oficial,
+Programa G30,Caroline LIma,PORTAL DA REVENDA VEICULOS LTDA,Portal da Revenda Veiculos,26.117.246/0001-31,46201,d,https://www.instagram.com//
+Programa G30,Daniel Fernandes,Zorzetto veículos Ltda,Rudinei,36.429.853/0001-90,14905,https://www.instagram.com/domusveiculos/,https://www.instagram.com/domusveiculos/
+Programa G30,Daniel Fernandes,PORTAL VEICULOS COMERCIO E CONSIGNACAO LTDA,Renan | Portal Veículos,24.492.511/0001-36,30335,@portalveiculos_socorro,renanportalveículos
+Programa G30,Daniel Fernandes,Karla Veiculos Autocar LTDA,Karla Bianca |JK Veículos,43.870.541/0001-83,39465,https://www.instagram.com/nacionalveiculos55/?hl=pt,https://www.instagram.com/jkveiculoscachoeiro/
+Programa G30,Daniel Fernandes,MABE AUTOS COMERCIO DE VEICULOS LTDA,Lucas e Neto  |Mabe Autos,58.767.970/0001-05,41354,.,https://www.instagram.com//
+Programa G30,Daniel Fernandes,S L VEICULOS LTDA,Camila lyra e Songley | SL Veículos,54.776.425/0001-16,42801,https://www.instagram.com/slveiculos_?igsh=MTZmZzd5NGx2YjE5NA==,https://www.instagram.com/slveiculos_/
+Programa G30,Daniel Fernandes,CAR VEICULOS LTDA,Carlos Augusto lopes filho|  Car Prime,35101580000198,43501,carprime.veiculos,https://www.instagram.com/carhttps://www.instagram.com/carprime.veiculos/prime.veiculos/
+Programa G30,Giovana Matos,M CAR COMERCIO DE VEICULOS LTDA,Marcos Roberto da Silva Mcar,45.717.532/0001-82,2319,https://www.instagram.com/https://www.instagram.com/mcar.ro,@mcar.ro
+Lions Car Club,Giovana Matos,AMERICA AUTOMOVEIS LTDA,Tiago Zorzi - AMERICA AUTOMOVEIS LTDA,46.769.308/0001-05,11229,,https://www.instagram.com/americacarros/
+Lions Car Club,Giovana Matos,RAFHAEL LIMA VEICULOS LTDA,Rafhael Lima - Central Veículos,45.924.541/0001-44,11411,https://www.instagram.com/centralveiculos__/,https://www.instagram.com/centralveiculos__/
+Lions Car Club,Giovana Matos,J Cledeir Bezerra Comercio e Locacao de Veiculos Ltda,Patricia Borges - J Cledeir Bezerra Comercio e Locacao de Veiculos Ltda,11.072.221/0001-91,11520,https://www.instagram.com/jcveiculos_1/,https://www.instagram.com/jcmulticar/
+Lions Car Club,Giovana Matos,Mavi Veiculos Ltda.,Marcos  Perazza - Mavi Veiculos Ltda.Negócios,56.332.323/0001-37,11618,https://www.instagram.com/mavi.veiculos/,https://www.instagram.com/mavi.veiculos/
+Lions Car Club,Giovana Matos,AUTO HALL MOTORS COMERCIO DE VEICULOS LTDA,HILAYNO - AUTO HALL MOTORS COMERCIO DE VEICULOS LTDA,40.438.206/0001-12,11756,https://www.instagram.com/autohall_motors/,https://www.instagram.com/autohall_motors/
+Lions Car Club,Giovana Matos,Leao Motors Comercio de Veiculos LTDA,Fulvio Leão Multimarcas,23.514.554/0001-02,11757,https://www.instagram.com/_leaomultimarcas/,https://www.instagram.com/_leaomultimarcas/
+Lions Car Club,Giovana Matos,EVIDENCE MOTORS EIRELI,FREDERICO CONCI - EVIDENCE MOTORS EIRELI,23.027.803/0001-35,11759,,
+Lions Car Club,Giovana Matos,PACIFICO VEICULOS E CIA LTDA,Vanderlei Pacífico - Alvorada Veículos,05.554.033/0001-05,11774,,
+Lions Car Club,Giovana Matos,Ittmotors Comercio de Veiculos LTDA,RONALDO DOS SANTOS PEREIRA - Ittmotors Comercio de Veiculos LTDA,27.125.487/0001-95,11796,https://www.instagram.com/itt_motors/,https://www.instagram.com/itt_motors/
+Lions Car Club,Giovana Matos,Staff Comercio de Automoveis LTDA,DANIEL JOSE BERVIAN - Staff Comercio de Automoveis LTDA,7204733000197,11799,https://www.instagram.com/staffmotors/,https://www.instagram.com/staffmotors/
+Lions Car Club,Giovana Matos,SICCS CARS LTDA,ADILSON PESSOA DE ARAÚJO - SICCS CARS LTDA,09.612.553/0001-70,11809,,
+Lions Car Club,Giovana Matos,G3 Veiculos G3 Comercio de Veiculos LTDA,GLEISON MARQUES ROBAINA - G3 Veiculos G3 Comercio de Veiculos LTDA,43.300.408/0001-91,11819,https://www.instagram.com/g3veiculostl/,https://www.instagram.com/g3veiculostl/
+Lions Car Club,Giovana Matos,South Motors,South Motors,13.299.308/0001-21,11821,,
+Lions Car Club,Giovana Matos,BRESCHI MULTIMARCAS LTDA,Renato Breschi BMC motors,48.391.872/0001-54,11988,,
+Lions Car Club,Giovana Matos,ALETRINI MULTIMARCAS LTDA,Alexsandro Aletrini - ALETRINI MULTIMARCAS LTDA,30.793.455/0001-72,14228,https://www.instagram.com/aletrini_multimarcas/,https://www.instagram.com/aletrini_multimarcas/
+Lions Car Club,Giovana Matos,DIOGO AUTOMOVEIS LTDA,Diogo - DIOGO AUTOMOVEIS LTDA,45.536.762/0001-45,16343,https://www.instagram.com/Diogoautomoveismg/,https://www.instagram.com/Diogoautomoveismg/
+Programa G30,Giovana Matos,DIEGO MARANHO GONCALVES DE LIMA,Diego Maranho | Kingvel Multimarcas,32.019.956/0001-21,18772,,kingvel.multimarcas
+Lions Car Club,Giovana Matos,G B de CARVALHO COMERCIO E LOCAÇÃO DE VEICULOS,GABRIEL BORTOLUCCI -  Hiperauto,33.575.638/0001-00,18975,https://www.instagram.com/hiperautoveiculo/,https://www.instagram.com/hiperautoveiculo/
+Lions Car Club,Giovana Matos,SC MOTORS COMERCIO E INTERMEDIAÇÃO DE VEICULOS LTDA,Gabriel | Karmann Automoveis,44.454.479/0001-01,19008,https://www.instagram.com/karmannautomoveis/,
+Lions Car Club,Giovana Matos,Personalitte comércio e intermediações de veiculos ltda epp,Thiago Diogo -  Personalitte,33.108.056/0001-13,19114,https://www.instagram.com/Personalitte.veiculos/,https://www.instagram.com/Personalitte.veiculos/
+Programa G30,Giovana Matos,REMA VEICULOS LTDA,Keila Nogueira | Rema Veículos,13.884.356/0001-87,20804,https://www.instagram.com/rema_veiculos/,https://www.instagram.com//
+Programa G30,Giovana Matos,Osama Motors LTDA,Alefe Felipe - Osama Motors,57.849.248/0001-49,23539,,https://www.instagram.com//
+Lions Car Club,Giovana Matos,RL VEICULOS LTDA,Elisangela de Souza Fidélis - RL VEICULOS LTDA,19.461.681/0001-13,23548,,https://www.instagram.com/rudineiveiculos/
+Lions Car Club,Giovana Matos,Movcar Comércio de Veículos LTDA,Orazio Ferreira | Movcar Comércio de Veículos,27.984.112/0001-80,27648,https://www.instagram.com/movcardf/,https://www.instagram.com/movcardf/
+Programa G30,Giovana Matos,LG Automoveis LTDA,Gustavo Barboza | LG Automoveis LTDA,51.294.753/0001-98,28030,https://www.instagram.com/lg.automoveis/,https://www.instagram.com//
+Lions Car Club,Giovana Matos,L. F. P. CAMARGO & CIA LTDA,GibaCar - Gilberto Camargo e Simone Camargo,43.804.138/0001-56,28056,https://www.instagram.com/gibamultimarcasquerenciamt/,https://www.instagram.com/gibamultimarcasquerenciamt/
+Programa G30,Giovana Matos,Ideal veículos comércio e consignação Ltda.,Allan Mattar | ADel Veiculos,12.829.954/0001-90,28321,@grupodelveiculos,
+Programa G30,Giovana Matos,704 Veículos LTDA,Bruna | 704 VEÍCULOS,32914608000118,30024,,https://www.instagram.com/704veiculosbsb/
+Programa G30,Giovana Matos,PC Nogueira,Paulo César e Thauana | Auto +,13.250.042/0001-22,30608,https://www.instagram.com/automaisveiculosribeirao/,automaisveiculosribeirao
+Lions Car Club,Giovana Matos,Pexe multimarcas comércio de veículos Ltda,Wagner e Dalci I Pexe Multimarcas,11.815.767/0001-95,33322,,
+Lions Car Club,Giovana Matos,Mp Auto Camargo e Mota LTDA,Victor Hugo | MP Auto,14.937.513/0001-38,33948,@cotcarveoculos ou @mpautomoveis,https://www.instagram.com//
+Lions Car Club,Giovana Matos,AF Comércio de Automoveis LTDA,Felipe A. | AF Comércio de Automoveis,21.484.207/0001-59,34109,https://www.instagram.com/afautomoveisbotucatu/,https://www.instagram.com/afautomoveisbotucatu/
+Programa G30,Giovana Matos,VEÍCULOS PELEGRINELLI LTDA,Rafael Pelegrinelli | Pelegrinelli Veículos,00.115.075/0001-18,34138,https://www.instagram.com/pelegrinelliveiculos?igsh=MTRrM202c3lsdjF6dg==,https://www.instagram.com/pelegrinelliveiculos/
+Programa G30,Giovana Matos,Effect Motors,Leandro I Effect Motors,59.410.948/0001-68,34914,,https://www.instagram.com//
+Programa G30,Giovana Matos,Alencar Motors Comércio de veículos LTDA,Andre I Alencar Motors,48.288.099/0001-03,34974,https://www.instagram.com/alencar_motorsoficial/,
+Lions Car Club,Giovana Matos,Ronaldo Leonardo Alcantara,Zaya Motors - Ronaldo Leonardo,50.105.031/0001-85,38193,,https://www.instagram.com/zayamotors/
+Programa G30,Giovana Matos,P R & Guedes Cia Ltda,Bruno Mota - Autonorte,32.015.899/0001-02,47291,https://www.instagram.com/autonortesinop/,
+Programa G30,Giovana Matos,Rinnovare Comercio de Veiculos LTDA,Jair Dal’Maso - Dalcar,06.871.926/0001-39,47332,https://www.instagram.com/Dalcarsinop/,https://www.instagram.com/Dalcarsinop/
+Programa G30,Guga Gadelha,,thales_giovanella@hotmail.com - Thales (cópia),48514531000179,41448,,
+Programa G30,Guilherme Godoy,BH MINAS VEICULOS LTDA.,BH MINAS VEICULOS LTDA.,29.245.621/0001-17,46301,@phminasveiculos,https://www.instagram.com//
+Programa G30,Guilherme Godoy,GOLD AUTOMOVEIS LTDA,jrenato_cestari@hotmail.com - Joao,37.155.327/0001-42,46919,https://www.instagram.com/goldautomoveis?igsh=bHQxbnowZGF3aHJp,https://www.instagram.com//
+Programa G30,Henrique Firmo,Zero Kilometro Automoveis LTDA,Zero Kilometro Automoveis LTDA,25.299.122/0001-51,40234,https://www.instagram.com/meuzerokilometro/,
+Programa G30,Henrique Firmo,SOFIX CAR COMERCIO DE VEICULOS LTDA,SOFIX CAR COMERCIO DE VEICULOS LTDA,18.956.420/0001-01,46248,.,https://www.instagram.com//
+Programa G30,Henrique Firmo,Luiz Paulo Veiculos LTDA,fasam3_@hotmail.com - Luiz,07.549.888/0001-65,47173,https://www.instagram.com/luizautomoveisgyn?igsh=bzdrMXM1djZ1dmI4,
+Lions Car Club,Jennifer,Scursone Multimarcas,Ezequiel Scursone,40.122.646/0001-66,11518,https://www.instagram.com/scursone_multimarcas/,https://www.instagram.com/scursone_multimarcas/
+Lions Car Club,Jennifer,M3 VEICULOS LTDA,Marcos - M3 VEICULOS LTDA,26.629.365/0001-73,11613,https://www.instagram.com/m3veiculos/,
+Lions Car Club,Jennifer,Agencia de Automoveis Robmar LTDA,Roberto - Agencia de Automoveis Robmar LTDA,00.376.118/0001-19,11620,https://www.instagram.com/robmar_automoveis/,https://www.instagram.com/robmar_automoveis/
+Lions Car Club,Jennifer,A J R de Souza Veículos Eireli,Artêmio Jesus Reis de Souza,09.569.044/0001-01,11750,,
+Lions Car Club,Jennifer,BFC AUTO SHOW VEICULOS LTDA,BFC AUTOSHOW,01.279.255/0001-06,11758,https://www.instagram.com/bfcautoshow/,https://www.instagram.com/bfcautoshow/
+Lions Car Club,Jennifer,Mota Soares Veiculos Ltda,Carlão Automóveis,16.499.935/0001-02,11765,https://www.instagram.com/carlao.automoveis/,https://www.instagram.com/carlao.automoveis/
+Lions Car Club,Jennifer,Gomes veículos,Gomes veículos,35.598.097/0001-60,11790,,
+Lions Car Club,Jennifer,LAGO AUTOMOVEIS LTDA,RONALDO LAGO - LAGO AUTOMOVEIS LTDA,31.373.449/0001-29,11802,,
+Lions Car Club,Jennifer,Esplacar Veiculos LTDA,BRENDA LOURECHINI - Esplacar Veiculos LTDA,04.106.448/0001-45,11804,,
+Lions Car Club,Jennifer,JR VEICULOS LTDA,JUNIOR MACARIO - JR VEICULOS LTDA,35.665.146/0001-30,11813,https://www.instagram.com/jrveiculosqxd/,https://www.instagram.com/jrveiculosqxd/
+Programa G30,Jennifer,AGM AUTOMOTOPECAS SOBRAL LTDA,Gustavo Tildes | AGM AUTOMOTOPECAS,38.355.383/0001-93,14128,https://www.instagram.com/shinerayce/,https://www.instagram.com/shinerayce/
+Lions Car Club,Jennifer,Abraao Car Ltda,Abraao Junior | Abraao Car,52.277.060/0001-50,15203,https://www.instagram.com/abraaocarrj/,
+Lions Car Club,Jennifer,Danilo Pereira da Silva ME,Lucas Henrique Capistrano Cunha - Danilo Pereira da Silva ME,27.296.180/0001-57,16028,https://www.instagram.com/automoveisdanilo/,https://www.instagram.com/automoveisdanilo/
+Lions Car Club,Jennifer,W & R Comercio de Veiculos e Servicos LTDA,WELINGTON (WR VEICULOS) - W & R Comercio de Veiculos e Servicos LTDA,08.599.741/0001-42,17213,https://www.instagram.com/wrveiculosjf/,https://www.instagram.com/wrveiculosjf/
+Lions Car Club,Jennifer,Lopes e Cavalcante Comercio de Veiculos LTDA,Fabiano Cavalcante - Lopes e Cavalcante Comercio de Veiculos LTDA,08.449.323/0001-79,17370,,
+Lions Car Club,Jennifer,BOX 215 COMERCIO DE VEICULOS LTDA.,Sergio Shimomoto - BOX 215 COMERCIO DE VEICULOS LTDA.,08.825.471/0001-40,17449,,
+Lions Car Club,Jennifer,Romeiro Multimarcas Ltda,Alexandre Romeiro - Romeiro Multimarcas Ltda,10.340.635/0001-91,17697,,
+Programa G30,Jennifer,ITALO AUTOMOVEIS AMERICANA LTDA,Dino Jeferson Zaparelili - ITALO AUTOMOVEIS AMERICANA LTDA,51.310.179/0001-14,18575,https://www.instagram.com/italo_automoveis/,
+Programa G30,Jennifer,PGP comércio de veículos Ltda.,Juliana Carrion | Perfil Veículos,073775760001/11,19610,https://www.instagram.com/perfil_veiculos_rp/,https://www.instagram.com/perfil_veiculos_rp/
+Programa G30,Jennifer,SANTA MARIA PALMAS LTDA,Bruno Coelho | SANTA MARIA PALMAS,43.058.204.0001/96,26718,https://www.instagram.com/santamariaveiculos/,https://www.instagram.com//
+Programa G30,Jennifer,MARCELO ANDRADE DE DEUS COMERCIO DE VEICULOS,Marcelo Andrade de Deus | Andrade car multimarcas,9501000000140,27477,https://www.instagram.com/andradecarmultimarcas/,https://www.instagram.com//
+Lions Car Club,Jennifer,DIAMOND VEICULOS LTDA,Samuel Fernandes Rodovalho - Diamond,58.492.262/0001-09,27736,https://www.instagram.com/diamondveiculosuberaba/,https://www.instagram.com//
+Programa G30,Jennifer,VITA MOTORS LTDA,André Luis Alves | VITA MOTORS,21.917.753/0001-36,28210,https://www.instagram.com/vitamotors.veiculos/,https://www.instagram.com/vitamotors.veiculos/
+Lions Car Club,Jennifer,Panther Motors Multimarcas Ltda,Matheus | Panther Motors,55.077.034/0001-76,28917,@pantermotorss,https://www.instagram.com//
+Programa G30,Jennifer,ASTURIAS MULTIMARCAS COMERCIO DE VEICULOS LTDA,Leandro Astúrias | Asturias Multimarcas,26.388.240/0001-07,29682,https://www.instagram.com/asturiasmultimarcas/,
+Programa G30,Jennifer,LRF MULTIMARCAS LTDA,Ronieryson da Silva | Qualicarro,46901855000194,30068,https://www.instagram.com/qualicarrodf/,https://www.instagram.com/qualicarrodf/
+Lions Car Club,Jennifer,AVT Motors,Thiara | AVT Motors,34.908.851.0001-59,32655,https://www.instagram.com/avtmotorsoficial/,
+Programa G30,Jennifer,Goiânia veículos Ltda,Divino Cláudio e Tainara - Elisangela | Goiânia Veículos,03.881.673/0001-96,33401,,https://www.instagram.com//
+Programa G30,Jennifer,Super Auto Multimarcas LTDA,"Paula Gonzaga, Johran e Rafael | Super Auto",36.734.766/0001-47,33406,https://www.instagram.com/superauto.multimarcas/,https://www.instagram.com/superauto.multimarcas/
+Programa G30,Jennifer,Camargo Multimarcas Ltda,Sergio Pedro Camargo | Camargo Multimarcas,14.307.028/0001-80,38191,https://www.instagram.com/camargomultimarcas.oficial/,Camargomultimarcasoficial
+Programa G30,Jennifer,JP COMERCIO DE VEICULOS LTDA,Antonio e Jairo  | JP COMERCIO DE VEICULOS LTDA,35.874.877/0001-96,41418,https://www.instagram.com/jpveiculosjnce/,https://www.instagram.com/jpveiculosjnce/
+Programa G30,Jennifer,P C DO CARMO FILHO VEICULOS,Paulo Cassiano do Carmo Filho,22.804.114/0001-27,42174,https://www.instagram.com/carrosonlineoficial/,https://www.instagram.com/carrosonlineoficial/
+Programa G30,Jennifer,GUERRA MOTORS LTDA,Guerra motors,36.931.466/0001-58,42622,.,
+Lions Car Club,Jennifer,SAMUEL SHOP CAR LTDA,Samuel Rodrigues | Samuel Shop Car,23321489000107,43445,https://www.instagram.com/samuel.shop.car/,https://www.instagram.com//
+Programa G30,Jennifer,JFN COMERCIO DE VEICULOS E INTERMEDIACAO DE NEGOCIOS LTDA,Wellington,37.301.449/0001-08,44776,@autobossveiculos,
+Programa G30,Jennifer,RECIFE CENTER AUTOMOVEIS LTDA,Marcos oliveira | Recife Center,55.118.495/0001-40,45041,https://www.instagram.com/recifecenter?igsh=YnB1N2R5ZXZrYW9k,
+Programa G30,Jennifer,BOSS MOTORS VEICULOS LTDA,Arthuro Lopes,19.650.596/0001-01,45284,https://www.instagram.com/bossmotors/,
+Programa G30,Jennifer,AUTO X VEICULOS MULTIMARCAS LTDA,ANTONIO NIVALDO ROLIM RIBEIRO DE SOUSA,49140548000126,45565,https://www.instagram.com/autoxpb?igsh=azFoY2lpOHNvaWFn,https://www.instagram.com//
+Programa G30,Jennifer,Auto Mais Veiculos Multimarcas LTDA,Gustavo Peris Lima | Auto Mais Veiculos Multimarcas LTDA,10.780.687/0001-89,46617,https://www.instagram.com/sorriso_automais?igsh=dXdwODc4ejh2eDRz,https://www.instagram.com//
+Programa G30,Jennifer,ACICAR VEICULOS LTDA,Wiliam Autocar,07.624.135/0001-77,46637,autocar,
+Programa G30,Jennifer,Luis Motors Multimarcas LTDA,Adriane,60.284.126/0001-67,47254,luismotorsmultimarcas,https://www.instagram.com//
+Programa G30,Jennifer,GIOVANI VEICULOS LTDA,EDILENE,37.763.733/0001-98,47383,https://www.instagram.com/giovaniveiculos/,https://www.instagram.com/giovaniveiculos/
+Programa G30,Jennifer,BOAZ MOTORS MULTIMARCAS LTDA,Bruno - Boaz Motors,34.850.785/0001-03,47464,https://www.instagram.com/boazmotors/,
+Programa G30,Lucas Maes,DECO MULTIMARCAS LTDA,DECO MULTIMARCAS LTDA,42.262.439/0001-32,40590,https://www.instagram.com/multimarcasdeco/,https://www.instagram.com//
+Programa G30,Lucas Maes,SMART RENT A CAR ADMINISTRACAO E LOCACAO LTDA,SMART RENT A CAR ADMINISTRACAO E LOCACAO LTDA,14.634.504/0001-78,43319,.,
+Programa G30,Maria Eduarda,BERTO MULTIMARCAS LTDA,BERTO MULTIMARCAS,35.334.295/0001-17,18801,,https://www.instagram.com//
+Programa G30,Maria Eduarda,Auto Esporte Multimarcas,Auto Esporte Multimarcas,Auto Esporte Multimarcas,18879,,
+Programa G30,Maria Eduarda,Ideal veículos comércio e consignação Ltda.,Adel Veículos,128299540001-90,32956,@grupodelveiculos,
+Programa G30,Maria Eduarda,A D M Veiculos A. F. Bonfim - Veiculos,A D M Veículos,14029625000190,33110,https://www.instagram.com/admveiculos/,https://www.instagram.com/admveiculos/
+Programa G30,Maria Eduarda,Adriana Mello Bernardes Ltda,Visão Multimarcas,16.538.034/0001-74,35196,,https://www.instagram.com/visão Multimarcas/
+Programa G30,Maria Eduarda,EPC AUTOMOTIVE LTDA,DA CUNHA,46.142.723/0001-26,38508,,https://www.instagram.com/dacunha.multimarcas
+Programa G30,Maria Eduarda,Brasil 500 Comercio de Veiculos LTDA,Forza Motors,36.349.531/0001-31,38511,@forzamotorsbr,https://www.instagram.com//
+Programa G30,Maria Eduarda,Abreu Motors comercio locacao e intermediacao de vendas Ltda,Abreu Motors,36.067.323/0001-40,38515,,
+Programa G30,Maria Eduarda,RAFAGNIN MOTORS LTDA,RAFAGNIN MOTORS LTDA,40.078.782/0001-04,38517,,https://www.instagram.com/prmotors1/
+Programa G30,Maria Eduarda,Renova Multimarcas e Corretora de Seguros LTDA,Renova Multimarcas,12.616.452/0001-81,38527,@renova.multimarcas,@renova.multimarcas
+Programa G30,Maria Eduarda,PEREIRA & AMADIO LTDA,Lexus Motors,27.658.261/0001-50,38641,lexusmotorslimeira,https://www.instagram.com/lexusmotorslimeira
+Programa G30,Maria Eduarda,PEPE COMERCIO DE VEICULOS LTDA,PEPE COMERCIO DE VEICULOS LTDA,15.192.723/0001-07,38690,@pepeveiculos,https://www.instagram.com/pepeveiculos/
+Programa G30,Maria Eduarda,Forte Veículos Ltda,Forte Veículos Ltda,53.861.715/0001-03,39602,forte_veiculos_cachoeiro,https://www.instagram.com/forte_veiculos_cachoeiro/
+Programa G30,Maria Eduarda,Dalgallo Autos LTDA,Dalgallo Autos LTDA,01.395.216/0001-66,39620,https://www.instagram.com/dalgallomotors?igsh=bGY0aWo4ZHdlN3Rt,https://www.instagram.com//
+Programa G30,Maria Eduarda,Jrk Veiculos LTDA,Jrk Veiculos LTDA,55.930.444/0001-18,39662,@prestigeomotorscachoeiro,https://www.instagram.com/jrkveiculosmultimarcas/
+Programa G30,Maria Eduarda,Junior Motos Jr Motos LTDA,Junior Motos Jr Motos LTDA,60.131.388/0001-91,39750,@jrmotos.es,https://www.instagram.com/jrmotos.es/
+Programa G30,Maria Eduarda,Viza Car Comercio de Automoveis Ltda,Viza Car Comercio de Automoveis Ltda,49.866.219/0001-67,39806,https://www.instagram.com/vizaautomoveis/,https://www.instagram.com/vizaautomoveis/
+Programa G30,Maria Eduarda,Jorge Eduardo Moreira & CIA LTDA-ME,Du Veículos,09.474.963/0001-00,40136,du.veiculos,https://www.instagram.com/du.veiculos/
+Programa G30,Maria Eduarda,Rm Motors Comercio e Locacao de Veiculos LTDA,Rm Motors Comercio e Locacao de Veiculos LTDA,56.341.382/0001-71,40440,rmmotors2024,https://www.instagram.com/p/DPHYEJHibtV/?img_index=1
+Programa G30,Maria Eduarda,Webcar Veiculos LTDA,Webcar Veiculos LTDA,41.750.187/0001-28,40450,,https://www.instagram.com//
+Programa G30,Maria Eduarda,JAC REVENDA DE VEICULOS LTDA,JAC REVENDA DE VEICULOS LTDA,31.211.293/0001-80,40570,@jacveiculos,https://www.instagram.com//
+Programa G30,Maria Eduarda,LUANA DE SOUZA GOMES AUTOMOVEIS LTDA,GS automóveis,60.496.756/0001-03,42101,,
+Programa G30,Maria Eduarda,MABE AUTOS COMERCIO DE VEICULOS LTDA,MABE AUTOS COMERCIO DE VEICULOS LTDA,58.767.970/0001-05,42233,.,https://www.instagram.com//
+Programa G30,Maria Eduarda,,administrativo@berettaveiculos.com.br - Marlos (cópia),05.674.545/0001-05,42606,,
+Programa G30,Maria Eduarda,DUNELLI AUTOMOVEIS LTDA,DUNELLI AUTOMOVEIS LTDA,32.227.109/0001-52,42664,,https://www.instagram.com/dunelli_automoveis/
+Programa G30,Maria Eduarda,AHR CONSIGNADO LTDA,Station Motors,40.737.201/0001-90,42666,,
+Lions Car Club,Maria Eduarda,EVIDENCE MOTORS LTDA,EVIDENCE MOTORS EIRELI,23.027.803/0001-35,42784,,
+Programa G30,Maria Eduarda,CORREA VEICULOS LTDA,CORREA VEICULOS LTDA,37.337.563/0001-80,42796,https://www.instagram.com/correa_veiculos/,https://www.instagram.com/correia_veiculos?igsh=MmwzYXZsbDU0aDFs
+Programa G30,Maria Eduarda,HM MOTORS LTDA,Henrique Motos,59.874.599/0001-35,42819,https://www.instagram.com/henriquemotosuberaba/,
+Programa G30,Maria Eduarda,SANTA TEREZINHA VEICULOS E ESTACIONAMENTO TAUBATE LTDA,SANTA TEREZINHA VEICULOS E ESTACIONAMENTO TAUBATE LTDA,03.736.127/0001-61,43296,stvbveiculos,https://www.instagram.com/stvveiculos/
+Programa G30,Maria Eduarda,ONE MOTORS COMERCIO E LOCACAO DE VEICULOS LTDA,ONE MOTORS COMERCIO E LOCACAO DE VEICULOS LTDA,50.490.514/0001-40,43570,,https://www.instagram.com/onemotors.ce/
+Programa G30,Maria Eduarda,DADO CAR VEICULOS LTDA,DADO CAR VEICULOS LTDA,48.146.131/0001-08,43598,,
+Programa G30,Maria Eduarda,RENOIR COMERCIO DE VEICULOS LTDA,RENOIR COMERCIO DE VEICULOS LTDA,28.633.323/0001-31,44048,https://www.instagram.com/litecar.rn/,https://www.instagram.com/litecar.rn/
+Programa G30,Maria Eduarda,RJ CAR DE MERITI AUTOMOVEIS LTDA,RJ CAR DE MERITI AUTOMOVEIS LTDA,218570640001 83,44076,,
+Programa G30,Mariana,RENOIR COMERCIO DE VEICULOS LTDA,Renoir Junior | Lite Car - RN,28.633.323/0001-31,11153,https://www.instagram.com/litecar.rn/,https://www.instagram.com/litecar.rn/
+Programa G30,Mariana,Faria Multimarcas LTDA,Jefferson Faria | Faria Multimarcas,24.128.536/0001-55,17982,https://www.instagram.com/Faria_multimarcas/,https://www.instagram.com/Faria_multimarcas/
+Programa G30,Mariana,ISABEL CRISTINA MACEDO DE AQUINO LTDA,Pedro Henrique Macedo de Aquino| Mastercard,28.631.663/0001-23,18781,https://www.instagram.com/mastercarmultimarcas/,https://www.instagram.com/mastercarmultimarcas/
+Programa G30,Mariana,R. DE NORONHA LTDA,YASMIN MANCHINI DE NORONHA - R. DE NORONHA LTDA,24.693.363.0001-18,23459,https://www.instagram.com/interiorautomoveis/,https://www.instagram.com/interiorautomoveis/
+Programa G30,Mariana,K2 Motors Com de Veiculos Ltda,Wagner Messi | K2 Motors,24.425.211/0001-34,23598,,https://www.instagram.com/k2_veiculos/
+Programa G30,Mariana,UZ Veículos,Fabricio |UZ Veículos,15.736.902/0001-68,23930,https://www.instagram.com/Uz_veiculos/,: https://www.instagram.com/uz_veiculos
+Programa G30,Mariana,GARAGEM COMERCIO VAREJISTA DE VEICULOS LTDA,Tiago da Silva | GARAGEM COMERCIO VAREJISTA DE VEICULOS LTDA,33.487.104/0001-21,24465,https://www.instagram.com/garagemveiculos19/,https://www.instagram.com/garagemveiculos19/
+Programa G30,Mariana,P4 Veiculos LTDA,Paulo Cesar  | P4 Veículos,45854279000109,25803,https://www.instagram.com/p4.veiculos,https://www.instagram.com/p4.veiculos/
+Programa G30,Mariana,ROCHA MOTORS LTDA,Rodrigo Santos Rocha | Rocha Motors,49.175.677/0001-50,26033,https://www.instagram.com/rochamotorsmt/,rochamotorsmt
+Programa G30,Mariana,FABIO PEREIRA GONCALVES,Fabio Pereira Gonçalves | Fábio Veículos,34640646000155,26446,https://www.instagram.com/fabio_veiculos_/,https://www.instagram.com//
+Programa G30,Mariana,IVEL COMÉRCIO DE AUTOMÓVEIS LTDA,Ivan Luiz Schweder | Ivel Automóveis,06.294.944/0001-03,27449,https://www.instagram.com/ivel.automoveis/,https://www.instagram.com//
+Programa G30,Mariana,Filipe Muniz e cia Ltda,Filipe Muniz | Revolução automóveis,7552400000159,29243,https://www.instagram.com/revolucao_automoveis/,https://www.instagram.com/revolucao_automoveis/
+Programa G30,Mariana,V8MULTIMARCAS LTDA,Mateus Ferri| V8 Multimarcas LTDA,40.884.176/0001-78,37494,https://www.instagram.com/v8_multimarcasrs/,https://www.instagram.com/v8_multimarcasrs/
+Programa G30,Mariana,EPC AUTOMOTIVE LTDA,Elton | Da Cunha Multimarcas,46.142.723/0001-26,38196,https://www.instagram.com/dacunha.multimarcas/,https://www.instagram.com/dacunha.multimarcas
+Programa G30,Mariana,Auto Top Veiculos,Rafael Marcelino| Auto Top Veículos,26.429.540/0001-89,38317,https://www.instagram.com/autotopveiculosjundiai/,: https://www.instagram.com/autopveiculosjundiai
+Programa G30,Mariana,PEPE COMERCIO DE VEICULOS LTDA,Pedro| PEPE COMERCIO DE VEÍCULOS,15.192.723/0001-07,38580,https://www.instagram.com/pepeveiculos/,https://www.instagram.com/pepeveiculos/
+Programa G30,Mariana,MAGNO E OLIVEIRA VEICULOS LTDA,Thiago Magno| CAR BOSS MULTIMARCAS,19.396.102/0001-04,38656,https://www.instagram.com/carboss.es/,https://www.instagram.com//carboss.es
+Programa G30,Mariana,DM MARQUES VEICULOS,Douglas Machado| DM MARQUES VEÍCULOS,26.846.009/0001-01,38745,https://www.instagram.com/douglas.autocar/,https://www.instagram.com/douglas.autocar/
+Programa G30,Mariana,Forte Veículos Ltda,José Roberto Penaforte Viana filho | Forte Veículos,53.861.715/0001-03,39019,https://www.instagram.com/forteveiculoscachoeiro/,https://www.instagram.com/forte_veiculos_cachoeiro/
+Programa G30,Mariana,RODRIGAO VEICULOS LTDA,Rodrigo Henriques dos Santos| RODRIGAO VEÍCULOS,28.531.792/0001-40,39463,https://www.instagram.com/rodrigao_seminovos/,https://www.instagram.com/rodrigao_seminovos/
+Programa G30,Mariana,Caparao Automóveis LTDA,Evandro da Silva Delprete |Sebastião Caparaó automóveis,18.283.360/0001-03,39509,https://www.instagram.com/caparaoautomoveis/,https://www.instagram.com//caparaoautomoveis
+Programa G30,Mariana,Junior Motos Jr Motos LTDA,Deborah Louredo Lima| Junior Motos Jr Motos,60.131.388/0001-91,39747,https://www.instagram.com/jrmotos.es/,https://www.instagram.com/jrmotos.es/
+Programa G30,Mariana,Brasil Seminovos LTDA,Tercio Conserva| Brasil Seminovos,43.356.446/0001-66,39815,https://www.instagram.com/brasil.seminovos/,https://www.instagram.com/brasil.seminovos/
+Programa G30,Mariana,Nova Comércio de Veiculos de Lins Ltda,Henrique  Sanches| Nova Multimarcasrique Said,26.000.697/0001-94,39985,https://www.instagram.com/novamultimarcas/,https://www.instagram.com/novamultimarcas/
+Programa G30,Mariana,RD PESSOA VEICULOS E ESTACIONAMENTO LTDA,Rodrigo Assis Pessoa| Roma Veículos,10.418.445/0001-40,40387,https://www.instagram.com/romaveiculosuberaba/,https://www.instagram.com/romaveiculosuberaba/
+Programa G30,Mariana,SMART VEICULOS UBERABA LTDA,Fabiano e Maurilio| SMART VEICULOS UBERABA,46381449000148,40562,https://www.instagram.com/smartveiculosuberaba/,https://www.instagram.com/smartveiculosuberaba/
+Programa G30,Mariana,TITANIUM MOTORS COMERCIO DE VEICULOS LTDA,Lucas Azevedo|TITANIUM MOTORS,60.016.598/0001-39,42309,https://www.instagram.com/titaniummotorsrj/,https://www.instagram.com/titaniummotors
+Programa G30,Mariana,BY CARS TATUAPE MULTIMARCAS LTDA,Rafael Bertocco|RB Multimarcas,30.081.730/0001-25,42650,https://www.instagram.com/rbmultimarcas.sp/,https://www.instagram.com/rbmultimarcas.sp/
+Programa G30,Mariana,BELINO VEICULOS LTDA,Carlos| Belino veículos,31.628.616/0001-35,42656,https://www.instagram.com/belinoveiculosba/,https://www.instagram.com/belinoveiculosba/
+Programa G30,Mariana,JOSAE MULTIMARCAS LTDA,Samuel|josaemultimarcasfranca,21.267.033/0001-72,42672,https://www.instagram.com/josaeoficial/,https://www.instagram.com/josaeoficial/
+Programa G30,Mariana,LUIZ ALVES DA SILVA FILHO LTDA,Luiz alves da silva filho| DAVICAR AUTOMOVEIS,04.110.843/0001-00,43453,https://www.instagram.com/davicarautomoveis/,https://www.instagram.com/davicarautomoveis/
+Programa G30,Mariana,CONCESSIONARIA ATIVA COMERCIO DE VEICULOS LTDA,Renato Ramos Freire e Daniel Ferreira Mauadie | Ativa Autos,38080787000111,43460,https://www.instagram.com/ativaautomoveis/,https://www.instagram.com/ativaautomoveis?igsh=MWsyYTRvMDA3M281MA%3D%3D
+Programa G30,Mariana,LIFE CAR SERVICOS LTDA,Leonardo Duarte Girão|Life Car Veículos,43136633000134,43529,https://www.instagram.com/lifecar_veiculos/,https://www.instagram.com/lifecar_veiculos?igsh=MXZwajJqdHNkNmR3dg%3D%3D
+Programa G30,Mariana,RNC COMERCIO DE VEICULOS LTDA,Wanderson Nunues| RNC VEÍCULOS,32.226.447/0001-70,43807,https://www.instagram.com/nunes_automoveis?igsh=cmFuOGRqdWRnaHN4,https://www.instagram.com/nunes_automoveis?igsh=cmFuOGRqdWRnaHN4
+Programa G30,Mariana,IDEAL VEICULOS COMERCIO E INTERMEDIACOES DE VEICULOS LTDA,"Elizabeth,Filipe, Tiago | Ideal Veículos",66.879.040/0001-63,43869,@idealveiulosrp,https://www.instagram.com/idealmultimarcasgv/
+Programa G30,Mariana,IPUTINGA PRIME VEICULOS LTDA,Emmanuel Nunes pereira| IPUTINGA PRIME VEICULOS,54.866.988/0001-03,44096,https://www.instagram.com/iputingaprime?igsh=aWJucXk4dDdxbWIx&utm_source=qr,https://www.instagram.com/iputingaprime?igsh=aWJucXk4dDdxbWIx&utm_source=qr
+Programa G30,Mariana,PAULO CAMARGO DE QUADROS & CIA LTDA,Paulo Camargo de Quadros| Auto Center Veículos,05.426.359/0001-49,44294,https://www.instagram.com/autocenterveiculoscdr?igsh=eXJ6bzF1N3ZlN251&utm_source=qr,https://www.instagram.com/autocenterveiculoscdr/
+Programa G30,Mariana,FERREIRA MATTOS VEICULOS LTDA,Leonardo Francisco de Souza Mattos | Auto norte veículos,06.998.393/0001-50,45289,https://www.instagram.com/autonorteveiculos?igsh=YjR0dHRkNjIwM2sz,https://www.instagram.com/autonorteveiculos/
+Programa G30,Mariana,Exchange Motors Comércio de Veículos LTDA,Daniel| Exchange Motors - Exchange Motors Com. Import. Veiculos LTDA.,12.625.137/0001-10,45384,https://www.instagram.com/exchangemotors/,https://www.instagram.com/exchangemotors/
+Programa G30,Mariana,P4 VEICULOS COMERCIAL LTDA,Paulo e Ana Paula  | P4 VEICULOS,61.851.740/0001-26,46493,.,https://www.instagram.com//p4veiculosjundiai
+Programa G30,Mariana,SOPHIA HELLEN VIDAL DE LIMA,Francisco Kindermann | SOPHIA HELLEN VIDAL DE LIMA,59947947000157,46579,shineray oros,@shinerayelectrioros
+Programa G30,Mariana,SA VEICULOS LTDA,Carlos Alexandre wachtmann| SA Veículos,33.296.657/0001-05,47263,https://www.instagram.com/saveiculossinop.oficial?igsh=MXQ0cnR1Y2k2MXNteQ==,
+Programa G30,Mariana,CATATAU AUTOMOVEIS LTDA EPP,Emerson Alves Teixeira,11.065.967/0001-78,47423,,
+Programa G30,Mariana,DEMP MOTORS LTDA.,DAVID WILLIAM BARBOSA BARRETO LIMA| DEMP MOTORS,55.495.061/0001-69,47609,https://www.instagram.com/dempmotors/,https://www.instagram.com/dempmotors/
+Lions Car Club,Misael (ADM),GENERAL CARROS LTDA,EDILSON CRUZ - GENERAL CARROS,52135818000115,11748,,
+Lions Car Club,Misael (ADM),Grupo Cardoso,Marco Cardoso - Grupo Cardoso,09.115.565/0001-99,11770,,
+Lions Car Club,Misael (ADM),Cabral Multimarcas Comercio de Automóveis Ltda,Juliano Martins Cabral,04.718.231/0001-96,15899,,cabralmultimarcasoficial
+Lions Car Club,Misael (ADM),Vitrine Autos LTDA,Vitrine Autos,42.388.233/0001-53,19203,https://www.instagram.com/vitrine.autos/,https://www.instagram.com/vitrine.autos/
+Lions Car Club,Misael (ADM),Giusti & Giusti Comercio de Veiculos Ltda,LEANDRO FREITAS CALHEIROS - Alvorada Automóveis,30120546000147,24267,https://www.instagram.com/alvorada_automoveis/,https://www.instagram.com/alvorada_automoveis/
+Programa G30,Misael (ADM),DM MARQUES VEICULOS,DM MARQUES VEICULOS,26.846.009/0001-01,39617,https://www.instagram.com/douglas.autocar/,https://www.instagram.com/douglas.autocar/
+Programa G30,Misael (ADM),BELINO VEICULOS LTDA,BELINO VEICULOS LTDA,31628616000135,42657,,https://www.instagram.com/belinoveiculosba/
+Programa G30,Misael (ADM),AUTO CRUZ VEICULO COMERCIO E SERVICO LTDA,AUTO CRUZ VEICULO COMERCIO E SERVICO LTDA,35.636.712/0001-86,45328,,https://www.instagram.com//
+Programa G30,Misael (ADM),AUTO CRUZ VEICULO COMERCIO E SERVICO LTDA,AUTO CRUZ VEICULO COMERCIO E SERVICO LTDA,35.636.712/0001-86,45329,,https://www.instagram.com//
+Programa G30,Misael (ADM),GREEN MULTIMARCAS LTDA,GREEN MULTIMARCAS LTDA,41889066000161,46287,@greenmultimarcasoficial,https://www.instagram.com//
+Programa G30,Misael (ADM),AGAPE COMERCIO DE COMPRA E VENDA DE VEICULOS LTDA,Luciana Okubo e Tontoin | Ágape Veículos (cópia),26.499.859/0001-80,47010,@agape.veiculos,https://www.instagram.com/agape.veiculos
+Programa G30,Raissa Mayra,COMERCIO E REPRESENTACAO NATOCAR LTDA,Iran Teixeira Ramos | NATO CAR,87.801.403/0001-18,11148,https://www.instagram.com/natocar1980?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==,
+Programa G30,Raissa Mayra,NOVA ALTERNATIVA VEICULOS LTDA,Natan - Nova Alternativa,03184146 0001 22,15557,https://www.instagram.com/novaalternativaveiculos/,https://www.instagram.com/novaalternativaveiculos/
+Programa G30,Raissa Mayra,RODRIGUES E MARCON VEICULOS LTDA,Eduardo I Marcon,09.046.975/0001-25,23596,https://www.instagram.com/marconveiculos?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==,https://www.instagram.com/marconveiculos?igsh=MTR4anI3bnd5em9yag==
+Programa G30,Raissa Mayra,ALEXANDRE AUTOMOVEIS LTDA,Léo | Alexandre Automóveis,17.729.148/0001-64,24300,https://www.instagram.com/alexandre.automoveis?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==,
+Programa G30,Raissa Mayra,Batista Pedroso Comercio de Veículos LTDA,Daniel Rodrigues | Automax Sumaré,55552493/0001-64,24332,https://www.instagram.com/automax.sumare/,https://www.instagram.com/automax.sumare/
+Programa G30,Raissa Mayra,Santiago e Souza Ltda,Marcio Leandro Santiago | Trevo Automóveis,09.604.373.0001-46,27746,https://www.instagram.com/trevoautomoveisrs/,https://www.instagram.com/trevoautomoveisrs/
+Programa G30,Raissa Mayra,TONNY MOTORS COMÉRCIO DE VEICULOS LTDA,Matheus | Tonny Motors,38.249.754/0001-52,30653,https://www.instagram.com//@tonnymotors,https://www.instagram.com/tonnymotors/
+Programa G30,Raissa Mayra,auto play veículos,Juan Silva Figueiredo | Auto Play,45.056.079/0001-00,35388,https://www.instagram.com/auto.playveiculos/,https://www.instagram.com//
+Programa G30,Raissa Mayra,X10 MOTORS,Bruno Macedo e Moises | X10 MOTORS,07.749.264/0001-91,36474,@x10motors,https://www.instagram.com//
+Programa G30,Raissa Mayra,vassoura  comércio de veículos  LTDA,Iasmim | Vassoura Veículos,22.952.946/0001-90,37340,https://www.instagram.com/vassouraveiculos/,
+Programa G30,Raissa Mayra,Pouso Motors,Pouso Motors | Cledenilson Rodrigues,12.067.651/0001-88,37590,https://www.instagram.com/pousomotors/,
+Programa G30,Raissa Mayra,Chamorro Veículos,Rafael Chamorro | Chamorro Veículos,72.179.237/0002-73,38181,https://www.instagram.com/chamorroveiculos?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==,
+Programa G30,Raissa Mayra,RAFAGNIN MOTORS LTDA,Rafagnin Motors | Rafael Rafagnin,40.078.782/0001-04,38198,https://www.instagram.com/rafagnin_motors?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==,https://www.instagram.com/prmotors1/
+Programa G30,Raissa Mayra,Abreu Motors comercio locacao e intermediacao de vendas Ltda,Thales Alexandre | Abreu Motors,36.067.323/0001-40,38204,https://www.instagram.com/_abreumotors?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==,
+Programa G30,Raissa Mayra,GLA multimarcas LTDA,Leonardo Giatte | Gla Multimarcas,53.261.412/0001-41,38254,glamultimarcas_,glamultimarcas_
+Programa G30,Raissa Mayra,Renova Multimarcas e Corretora de Seguros LTDA,Reginaldo Felicio | Lilian | Renova Multimarcas,12.616.452/0001-81,38269,@renova.multimarcas,@renova.multimarcas
+Programa G30,Raissa Mayra,R.v. Comercio e Locacao de Automoveis LTDA,Reginaldo Vasconcelos | Selection Automóveis,33.211.514/0001-45,38805,https://www.instagram.com/selectionautomoveis/,https://www.instagram.com//
+Programa G30,Raissa Mayra,cruz veículos Ltda,Deyvison cruz | CRUZ VEICULOS,36556938/0001-30,39452,https://www.instagram.com/cruz.veiculos/,
+Programa G30,Raissa Mayra,NOVA ROMA VEÍCULOS LTDA,Jackelson Romão | NOVA ROMA VEÍCULOS,60.392.144/0001-62,39573,https://www.instagram.com/novaromaveiculos?igsh=NHZtdHBmZW1td291,Romao Veiculos
+Programa G30,Raissa Mayra,Zero Kilometro Automoveis LTDA,KIKO | Meu Zero Kilometro Automóveis,25.299.122/0001-51,39826,https://www.instagram.com/meuzerokilometro/,
+Programa G30,Raissa Mayra,VIVA MOTORS LTDA,Vinícius Mota | VIVA MOTORS,36.347.788/0001-54,39865,@vivamotorss,
+Programa G30,Raissa Mayra,Madricar Automoveis Ltda,Guilherme | Madricar Automóveis,60.627.213/0001-70,41012,https://www.instagram.com/madricarautomoveis/,https://www.instagram.com//
+Programa G30,Raissa Mayra,GARAGEM DO NELSINHO COMERCIO DE VEICULOS LTDA,Nelson borges I GARAGEM DO NELSINHO,45.958.897/0001-07,41116,https://www.instagram.com/garagemdonelsinho?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==,
+Programa G30,Raissa Mayra,TORK AUTOMOVEIS LTDA,Thiago dourado | Tork Automóveis,40.359.187/0001-39,41136,.,
+Programa G30,Raissa Mayra,HM MOTORS LTDA,Luiz |Henrique Motos,59.874.599/0001-35,41382,https://www.instagram.com/henriquemotosuberaba/,
+Programa G30,Raissa Mayra,COMERCIAL MOTOSHOPPING S J DOS CAMPOS LTDA,Enso Roberto | Moto Shopping Suzuki,00.525.362/0001-04,41933,https://www.instagram.com/motoshoppingsuzukisjc/,
+Programa G30,Raissa Mayra,LUANA DE SOUZA GOMES AUTOMOVEIS LTDA,Luana Gomes | GS Automóveis,60.496.756/0001-03,42097,https://www.instagram.com/gsautomoveisitj?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==,
+Programa G30,Raissa Mayra,E G SANTANA COMERCIO DE VEICULOS LTDA - ME,Elton Gomes I Elite Car,39.623.325/0001-66,42443,.,https://www.instagram.com/Elite car multimarcas Colatina/
+Programa G30,Raissa Mayra,AHR CONSIGNADO LTDA,Henrique I Station Motors BH,40.737.201/0001-90,42665,.,
+Programa G30,Raissa Mayra,EMERSON ALLAN VEICULOS LTDA,Emerson Allan | Allan Corretora Multimarcas,47.073.898/0001-91,44086,allancorretoramultimarcas - https://www.instagram.com/allancorretoramultimarcas?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==,https://www.instagram.com/allancorretoramultimarcas/
+Programa G30,Raissa Mayra,AUTOSHOW SELECTION LTDA,Osvaldo | Maxximum Automóveis,61.526.400/0001-20,44106,@autoshowselection,https://www.instagram.com//
+Programa G30,Raissa Mayra,Autoelite Veiculos Ltda,Jose Neto | Auto Elite,56153348000173,44812,@auto_elite_veiculos,https://www.instagram.com/auto_elite_veiculos?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==
+Programa G30,Raissa Mayra,Portal da Revenda Veiculos LTDA,Paulo Sergio | portal da revenda,26.117.246/0001-31,44946,d,https://www.instagram.com//
+Programa G30,Raissa Mayra,CDS COMERCIO DE VEICULOS AUTOMOTORES LTDA,Joelson Penido | Rondocar Veículos,14.450.350/0001-64,44979,.,https://www.instagram.com/rondocarveiculos?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==
+Programa G30,Raissa Mayra,RIONORTE COMERCIO DE VEICULOS LTDA,Hermando | Seminovos Rionorte,06.307.350/0001-81,45575,https://www.instagram.com/seminovosrionorte/,https://www.instagram.com//
+Programa G30,Raissa Mayra,BINAUTO AGENCIAMENTO DE VEICULOS LTDA,Nicolas | Binauto Veículos,40.775.298/0001-26,45617,binautoveiculos,https://www.instagram.com/binautoveiculos?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==
+Programa G30,Raissa Mayra,FP Veiculos Multimarcas,Luiz | FP veículos multimarcas,,45785,https://www.instagram.com/fpmultimarcasofc?igsh=ZG5jMzU4cXRkemho,https://www.instagram.com/fpmultimarcasofc?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==
+Programa G30,Raissa Mayra,CASE COMERCIO E VAREJO LTDA,Josinha Borges | IA Veículos,29.133.210/0001-30,45974,iaveiculos,
+Programa G30,Raissa Mayra,RIASA EMPREENDIMENTOS LTDA,Fabio | Autobahn Veículos,38.097.652/0001-69,46041,https://www.instagram.com/auto_bahnveiculos?igsh=MTh3NngyOXMzMWozbA==,https://www.instagram.com//
+Programa G30,Raissa Mayra,KAYO VEICULOS LTDA,Kayo | Kayo Veículos,24.732.734/0001-23,46151,https://www.instagram.com/kayoveiculosirati/,https://www.instagram.com//
+Programa G30,Raissa Mayra,SANTOS E BARROS LTDA,Lucas Santos | Gran Car Multimarcas,65.120.702/0001-54,47346,https://www.instagram.com/grancar_multimarcas?igsh=MWMzZGZ2cTNrbTBuOA%3D%3D&utm_source=qr,
+Programa G30,Sara,Kreusch Automóveis,kreuschalex94@gmail.com - Alex (cópia),32.054.028/0001-06,25612,https://www.instagram.com/kreuschautomoveis/,https://www.instagram.com//
+Programa G30,Shaylane Leopoldino,Blue Comercio de Veiculos ltda,Unimais veículos,14.239.814/0001-98,25501,unimais_veiculos,https://www.instagram.com/unimais_veiculos/
+Programa G30,Shaylane Leopoldino,Movcar Comércio de Veículos LTDA,Movcar Comércio de Veículos LTDA,27.984.112/0001-80,27649,https://www.instagram.com/movcardf/,https://www.instagram.com/movcardf/
+Programa G30,Shaylane Leopoldino,Debs & Debs Veiculos LTDA,Avant Motors,50.343.822/0001-43,30897,https://www.instagram.com/avant.motors_/,https://www.instagram.com//
+Programa G30,Shaylane Leopoldino,LUCAS MULTIMARCAS LTDA,LUCAS MULTIMARCAS LTDA,29.571.529/0001-47,35104,https://www.instagram.com/lucasmultimarcasrg/,https://www.instagram.com//
+Programa G30,Shaylane Leopoldino,Effect Motors,Effect Motors,59.410.948/0001-68,35198,,https://www.instagram.com//
+Programa G30,Shaylane Leopoldino,V8MULTIMARCAS LTDA,V8MULTIMARCAS LTDA,40.884.176/0001-78,37496,,https://www.instagram.com/v8_multimarcasrs/
+Programa G30,Shaylane Leopoldino,Baldo Motors Comércio de Veículos Ltda,Baldo Motors Comércio de Veículos Ltda,52.253.391/0001-50,38509,,
+Programa G30,Shaylane Leopoldino,Ultra Motors LTDA,Ultra Motors LTDA,58.248.911/0001-12,38516,,
+Programa G30,Shaylane Leopoldino,MM Autocar,MM Autocar,08.809.532/0001-86,38520,@mmautocar,https://www.instagram.com/mmautocar
+Programa G30,Shaylane Leopoldino,Camargo Multimarcas Ltda,Camargo Multimarcas Ltda,14.307.028/0001-80,38522,,Camargomultimarcasoficial
+Programa G30,Shaylane Leopoldino,Fênix Motors Buzios Ltda,Fênix Motors Buzios Ltda,61.885.441/0001-02,38524,https://www.instagram.com/fenixmotors._/,https://www.instagram.com/fenixmotors._?igsh=MXY5bmllNjFmZWgyag%3D%3D
+Programa G30,Shaylane Leopoldino,Auto Top Veiculos,Auto Top Veiculos,26.429.540/0001-89,38525,,: https://www.instagram.com/autopveiculosjundiai
+Programa G30,Shaylane Leopoldino,JESNER FELIPE TELLES VEICULOS,JESNER MOTORS,33.712.161/0001-67,38528,https://www.instagram.com/jesner_motors/,https://www.instagram.com//
+Programa G30,Shaylane Leopoldino,HR Concept car ltda,HR Concept car ltda,53190030/0001-74,38642,https://www.instagram.com/hrconceptcar/,https://www.instagram.com/hrconceptcar/
+Programa G30,Shaylane Leopoldino,Mondina Comércio de Veículos LTDA,Mondina Veículos,45.453.381/0001-00,38867,https://www.instagram.com/mondinaveiculos/,
+Programa G30,Shaylane Leopoldino,Itália Veículos Ltda,Itália Veículos Ltda,33.765.133/ 0001-08,39600,https://www.instagram.com/italiaveiculosvni/,
+Programa G30,Shaylane Leopoldino,Karla Veiculos Autocar LTDA,JK Veiculos,43.870.541/0001-83,39661,https://www.instagram.com/nacionalveiculos55/?hl=pt,https://www.instagram.com/jkveiculoscachoeiro/
+Programa G30,Shaylane Leopoldino,NOVA ROMA VEÍCULOS LTDA,NOVA ROMA VEÍCULOS LTDA,60.392.144/0001-62,39775,https://www.instagram.com/novaromaveiculos?igsh=NHZtdHBmZW1td291,Romao Veiculos
+Programa G30,Shaylane Leopoldino,Dante Comercio de Automoveis LTDA,Dante Automóveis,42.945.556/0001-09,40110,@danteautomoveisbtu,https://www.instagram.com//
+Programa G30,Shaylane Leopoldino,RODRIGAO VEICULOS LTDA,RODRIGAO VEICULOS LTDA,28.531.792/0001-40,40224,https://www.instagram.com/rodrigao_seminovos/,https://www.instagram.com/rodrigao_seminovos/
+Programa G30,Shaylane Leopoldino,VIVA MOTORS LTDA,VIVA MOTORS LTDA - Vinicius,36.347.788/0001-54,40403,@vivamotorss,
+Programa G30,Shaylane Leopoldino,SMART VEICULOS UBERABA LTDA,SMART VEICULOS UBERABA LTDA,46381449000148,40563,https://www.instagram.com/smartveiculosuberaba/,https://www.instagram.com/smartveiculosuberaba/
+Programa G30,Shaylane Leopoldino,WS AUTOMOVEIS LTDA,WS Automóveis,02.876.376/0001-90,40861,,https://www.instagram.com//
+Programa G30,Shaylane Leopoldino,DIEDRICH E GIOVANELLA NEGOCIOS AUTOMOTIVOS LTDA,Digicar Automóveis,48514531000129,41476,thales,
+Programa G30,Shaylane Leopoldino,HG VEICULOS LTDA,HG VEICULOS LTDA,59.501.160/0001-67,41992,.,https://www.instagram.com/hgveiculositz/
+Programa G30,Shaylane Leopoldino,TORK AUTOMOVEIS LTDA,TORK AUTOMOVEIS,40359187000139,42247,.,
+Programa G30,Shaylane Leopoldino,JURADO & MARQUES AUTOMOVEIS LTDA,Marks Veículos,5262178000124,42279,,
+Programa G30,Shaylane Leopoldino,Rm&P Comercio de Veiculos LTDA,Aurora Veiculos,62.739.187/0001-05,42395,.,@auroraveiculosbh
+Programa G30,Shaylane Leopoldino,E G SANTANA COMERCIO DE VEICULOS LTDA - ME,Elite car multimarcas,39623325000166,42481,.,https://www.instagram.com/Elite car multimarcas Colatina/
+Programa G30,Shaylane Leopoldino,MIX MULTIMARCAS VEICULOS E MOTOS LTDA,ELOMIX MULTIMARCAS,35726947000169,42667,,https://www.instagram.com/elomixmultimarcas/
+Programa G30,Shaylane Leopoldino,JOSAE MULTIMARCAS LTDA,JOSAE MULTIMARCAS LTDA,21.267.033/0001-72,42673,,https://www.instagram.com/josaeoficial/
+Programa G30,Shaylane Leopoldino,JC DE SOUZA LTDA,JC DE SOUZA LTDA,43828512000153,42698,.,
+Programa G30,Shaylane Leopoldino,GUERRA MOTORS LTDA,GUERRA MOTORS LTDA,36.931.466/0001-58,42713,.,
+Programa G30,Shaylane Leopoldino,DUO VEICULOS LTDA,DUO VEICULOS LTDA,29.071.783/0001-86,42832,@duo_veiculos,https://www.instagram.com/duo_veiculos/
+Programa G30,Shaylane Leopoldino,Borges Caminhões,BORGES CAMINHOES,31.172.107/0001-40,43286,,https://www.instagram.com/borges_veiculosecaminhoes/
+Programa G30,Shaylane Leopoldino,ITALO AUTOMOVEIS AMERICANA LTDA,ITALO AUTOMOVEIS AMERICANA LTDA,51.310.179/0001-14,43308,https://www.instagram.com/italo_automoveis/,
+Programa G30,Shaylane Leopoldino,CONCESSIONARIA ATIVA COMERCIO DE VEICULOS LTDA,ATIVA AUTOMÓVEIS,38080787000111,43461,,https://www.instagram.com/ativaautomoveis?igsh=MWsyYTRvMDA3M281MA%3D%3D
+Programa G30,Shaylane Leopoldino,DRIVE MOTORS SP LTDA,DRIVE MOTORS SP LTDA,55.320.943/0001-93,43589,@drivemotors,https://www.instagram.com/drive.motorss/
+Programa G30,Shaylane Leopoldino,BARELA E DURANTE AUTOMOVEIS LTDA,AM Multimarcas,34.092.854/0001-67,43597,https://www.instagram.com/ammultimarcascco/,https://www.instagram.com/ammultimarcascco/
+Lions Car Club,Shaylane Leopoldino,SAMUEL SHOP CAR LTDA,SHOP CAR SAMUEL,23321489000107,43599,.,https://www.instagram.com//
+Programa G30,Shaylane Leopoldino,FRANCISCO FERNANDES RODRIGUES MARTINS,FERNANDO MOTOS QUIXADÁ,63363592000126,43612,,
+Programa G30,Shaylane Leopoldino,BEKAM VEICULOS LTDA,BEKAM VEICULOS LTDA,33.630.172/0001-06,43623,https://www.instagram.com/veiculosbekam/,https://www.instagram.com/veiculosbekam/
+Programa G30,Shaylane Leopoldino,TITANIUM MOTORS COMERCIO DE VEICULOS LTDA,TITANIUM MOTORS COMERCIO DE VEICULOS LTDA,60.016.598/0001-39,44242,https://www.instagram.com/titaniummotorsrj/,https://www.instagram.com/titaniummotors
+Programa G30,Shaylane Leopoldino,NUMERO 1 VEICULOS LTDA,NUMERO 1 VEICULOS LTDA,34.414.386/0001-08,45001,@numero1.veiculos,https://www.instagram.com/numero1.veiculos/
+Programa G30,Shaylane Leopoldino,MASSALAI COMERCIO DE VEICULOS LTDA,MASSALAI COMERCIO DE VEICULOS LTDA,07.502.828/0001-97,45003,https://www.instagram.com/massalaiveiculos/,https://www.instagram.com/massalaiveiculos/
+Programa G30,Shaylane Leopoldino,D DONATO I FREIRE,D DONATO I FREIRE,19.088.904/0001-49,45438,,https://www.instagram.com/donautomultimarcas/
+Programa G30,Shaylane Leopoldino,SUPREMA SEMINOVOS,SUPREMA SEMINOVOS,58.448.583/0001-06,45599,https://www.instagram.com/supremaseminovos?igsh=NnJxdHlid2t3bzZr,https://www.instagram.com//
+Programa G30,Shaylane Leopoldino,BINAUTO AGENCIAMENTO DE VEICULOS LTDA,BINAUTO AGENCIAMENTO DE VEICULOS LTDA,40.775.298/0001-26,45692,binautoveiculos,https://www.instagram.com/binautoveiculos?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==
+Programa G30,Shaylane Leopoldino,AUTO SHOPPING DA CIDADE LTDA,AUTO SHOPPING DA CIDADE,39.276.331/0001-94,46194,autoshopping da cidade,
+Programa G30,Shaylane Leopoldino,CASE COMERCIO E VAREJO LTDA,IA VEÍCULOS,29.133.210/0001-30,46196,iaveiculos,
+Programa G30,Shaylane Leopoldino,ROMA COMERCIO DE VEICULOS LTDA,ROMA COMERCIO DE VEICULOS LTDA,35304174000122,46209,@romaveiculosvix,
+Programa G30,Shaylane Leopoldino,AUTENZA VEICULOS LTDA.,AUTENZA VEICULOS LTDA.,61.197.295/0001-22,46211,,https://www.instagram.com/autenzaveiculos/
+Programa G30,Shaylane Leopoldino,CAVENAGHI VEICULOS LTDA,Junnior Veículos,30.607.895/0001-98,46229,.,https://www.instagram.com//
+Programa G30,Shaylane Leopoldino,3JM VEICULOS LTDA,Uai Veículos - jonatas,01.407.152/0001-76,46231,https://www.instagram.com/uaiveiculosgv?igsh=a3lidmFqODVpMW1i,https://www.instagram.com//
+Programa G30,Shaylane Leopoldino,PABLO BARBOSA CERQUEIRA,PABLO CAR,35.264.543/0001-09,46237,.,https://www.instagram.com/pablocar.fsa/
+Programa G30,Shaylane Leopoldino,RIASA EMPREENDIMENTOS LTDA,Autobahn Veículos,38.097.652/0001-69,46252,https://www.instagram.com/auto_bahnveiculos?igsh=MTh3NngyOXMzMWozbA==,https://www.instagram.com//
+Programa G30,Shaylane Leopoldino,PAULO CAMARGO DE QUADROS & CIA LTDA,Auto center veículos,05.426.359/0001-49,46255,https://www.instagram.com/autocenterveiculoscdr?igsh=eXJ6bzF1N3ZlN251&utm_source=qr,https://www.instagram.com/autocenterveiculoscdr/
+Programa G30,Shaylane Leopoldino,SHEKINA COMERCIO E LOCACAO DE VEICULOS LTDA,SHOP CAR DANIEL/ISA,60.844.543/0001-17,46258,@shopcarmultimarcaschz,https://www.instagram.com//
+Programa G30,Shaylane Leopoldino,RGM MOTOS BRAGANCA PAULISTA LTDA,RGM MOTOS BRAGANCA PAULISTA,54.127.178/0001-27,46259,https://www.instagram.com/rgm_motos/,
+Programa G30,Shaylane Leopoldino,AUTO X VEICULOS MULTIMARCAS LTDA,AUTO X VEICULOS MULTIMARCAS LTDA,49140548000126,46265,https://www.instagram.com/autoxpb?igsh=azFoY2lpOHNvaWFn,https://www.instagram.com//
+Programa G30,Shaylane Leopoldino,JOSIMAR DE CASTRO CARDOSO LTDA,JOSIMAR DE CASTRO CARDOSO LTDA,14788318000193,46269,https://www.instagram.com/josimar_veiculos_fiat?igsh=MTNvNHpwaG96ODJrdg==,
+Programa G30,Shaylane Leopoldino,GRANTORINO COMERCIO DE VEICULOS LTDA,GRANTORINO COMERCIO DE VEICULOS LTDA,27.591.409/0001-86,46271,,https://www.instagram.com//
+Programa G30,Shaylane Leopoldino,LUIZ ALVES DA SILVA FILHO LTDA,DaviCar,04.110.843/0001-00,46272,https://www.instagram.com/davicarautomoveis/,https://www.instagram.com/davicarautomoveis/
+Programa G30,Shaylane Leopoldino,AUTOELITE VEICULOS LTDA,Autoelite Veiculos Ltda,56153348000173,46274,@auto_elite_veiculos,https://www.instagram.com/auto_elite_veiculos?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==
+Programa G30,Shaylane Leopoldino,PIT STOP O AUTO CENTER DE SAO GONCALO LTDA,Prime Multimarcas,182935090001-35,46281,@primemultimarcasltda,https://www.instagram.com//
+Programa G30,Shaylane Leopoldino,SOFIX CAR COMERCIO DE VEICULOS LTDA,SOFIX CAR,18.956.420/0001-01,46297,.,https://www.instagram.com//
+Programa G30,Shaylane Leopoldino,SOVEPE VEICULOS LTDA,SOVEPE VEICULOS LTDA,08.332.595/0001-94,46333,SOVEPEVEICULOS,SOVEPEVEICULOS
+Programa G30,Shaylane Leopoldino,FILIPE FERRAZ ESTAVARENGO,FILIPE FERRAZ ESTAVARENGO,16.541.640/0001-49,46479,https://www.instagram.com/ferrazveiculosjundiai?igsh=aHB4Nzhramw0cWhq,
+Programa G30,Shaylane Leopoldino,KAYO VEICULOS LTDA,KAYO VEICULOS LTDA,24.732.734/0001-23,46490,https://www.instagram.com/kayoveiculosirati/,https://www.instagram.com//
+Programa G30,Shaylane Leopoldino,TKS VEICULOS LTDA,TKS VEICULOS LTDA,52.643.808/0001-90,46491,,https://www.instagram.com/tks_veiculos/
+Programa G30,Shaylane Leopoldino,BARCELOS &amp; BARCELOS VEICULOS LTDA,DK Veículos,48.282.943/0001-80,46544,,
+Programa G30,Shaylane Leopoldino,P4 VEICULOS COMERCIAL LTDA,Paulo |  P4 Veículos,61.851.740/0001-26,46545,.,https://www.instagram.com//p4veiculosjundiai
+Programa G30,Shaylane Leopoldino,M CAR COMERCIO DE VEICULOS LTDA,M CAR COMERCIO DE VEICULOS LTDA,45.717.532/0001-82,47168,https://www.instagram.com/https://www.instagram.com/mcar.ro,@mcar.ro
+Programa G30,Shaylane Leopoldino,FLCP - COMERCIO DE VEICULOS LTDA,FLCP - COMERCIO DE VEICULOS LTDA,36.886.906/0001-00,47439,https://www.instagram.com/canal.automoveis?igsh=MWl2b3JqeWhlam9zcQ==,
+Programa G30,Thais Camilo,Mondina Comércio de Veículos LTDA,João | Mondina Veículos,45.453.381/0001-00,38382,https://www.instagram.com/mondinaveiculos/,
+Programa G30,Thais Camilo,JAC REVENDA DE VEICULOS LTDA,Douglas I Jac Veículos,31.211.293/0001-80,39837,@jacveiculos,https://www.instagram.com//
+Programa G30,Thais Camilo,PLANAUTO SEMINOVOS COMERCIO DE VEICULOS LTDA,João Vitor I PlanAuto Seminovos,27.523.298/0001-70,40051,https://www.instagram.com/planautoseminovos_df/,https://www.instagram.com/planautoseminovos_df/followers/mutualOnly
+Programa G30,Thais Camilo,BARCELOS &amp; BARCELOS VEICULOS LTDA,Kenio barcelos de camargos | DK VEÍCULOS,48.282.943/0001-80,40366,https://www.instagram.com/dkveiculos_/,
+Programa G30,Thais Camilo,WS AUTOMOVEIS LTDA,Sinval Franco | WS AUTOMÓVEIS,02.876.376/0001-90,40585,,https://www.instagram.com//
+Programa G30,Thais Camilo,CORREA VEICULOS LTDA,Marcio | CORRÊIA VEÍCULOS,37.337.563/0001-80,40866,https://www.instagram.com/correa_veiculos/,https://www.instagram.com/correia_veiculos?igsh=MmwzYXZsbDU0aDFs
+Programa G30,Thais Camilo,"TOP CAR SEMINOVOS, LOCACAO E COMERCIO DE VEICULOS LTDA",TOP CAR | ALESSANDRO,23.170.003/0001-79,41857,https://www.instagram.com/topcar.ms_dourados/,https://www.instagram.com//
+Programa G30,Thais Camilo,HG VEICULOS LTDA,HG VEÍCULOS | HUGO,59.501.160/0001-67,41928,.,https://www.instagram.com/hgveiculositz/
+Programa G30,Thais Camilo,JURADO & MARQUES AUTOMOVEIS LTDA,Marks veículos | Renan,05.262.178/0001-24,42053,https://www.instagram.com/marks.veiculos/,
+Programa G30,Thais Camilo,Beretta Veiculos LTDA,Marlos Beretta I Beretta Veículos,05.674.545/0001-05,42604,sad,
+Programa G30,Thais Camilo,DUNELLI AUTOMOVEIS LTDA,Eduardo Quinelli- DUNELLI AUTOMOVEIS,32.227.109/0001-52,42662,https://www.instagram.com/dunelli_automoveis/,https://www.instagram.com/dunelli_automoveis/
+Programa G30,Thais Camilo,SANTA TEREZINHA VEICULOS E ESTACIONAMENTO TAUBATE LTDA,STV- SANTA THEREZINHA VEÍCULOS | Thomas,03.736.127/0001-61,42675,https://www.instagram.com/stvveiculos/,https://www.instagram.com/stvveiculos/
+Programa G30,Thais Camilo,C. L. A.PEREIRA,FLEX MOTORS | Cléber,12.149.673/0001-97,42719,https://www.instagram.com/flexmotorsbauru/,https://www.instagram.com/flexmotorsbauru/
+Programa G30,Thais Camilo,DRIVE MOTORS SP LTDA,Jackson | Drive Motors,55.320.943/0001-93,42841,@drivemotors,https://www.instagram.com/drive.motorss/
+Programa G30,Thais Camilo,V D TAVANO - VEICULOS,Adriano | CRT VEÍCULOS,13.884.449/0001-01,43321,https://www.instagram.com/crtmultimarcas/,
+Programa G30,Thais Camilo,AUTOCON VEICULOS LTDA,Daniel | AUTOCON VEÍCULOS,51.932.249/0001-76,43434,https://www.instagram.com/autocon.tradecar?igsh=MTdsZWM4OGg2cGRzOQ%3D%3D&utm_source=qr,
+Programa G30,Thais Camilo,SOUZA E SILVA VEICULOS LTDA,Samanta | D'Black Motors e Kainni Veículos,08.280.016/0001-07,43466,https://www.instagram.com/kainniveiculos/   https://www.instagram.com/dblackmotors/,https://www.instagram.com/dblackmotors/      https://www.instagram.com/kainniveiculos/
+Programa G30,Thais Camilo,ONE MOTORS COMERCIO E LOCACAO DE VEICULOS LTDA,Rafael | One Motors,50.490.514/0001-40,43569,@onemotors.ce,https://www.instagram.com/onemotors.ce/
+Programa G30,Thais Camilo,BEKAM VEICULOS LTDA,Thomas| Bekam Veículos,33.630.172/0001-06,43574,https://www.instagram.com/veiculosbekam/,https://www.instagram.com/veiculosbekam/
+Programa G30,Thais Camilo,FRANCISCO FERNANDES RODRIGUES MARTINS,Francisco | FERNANDO MOTOS QUIXADA,63.363.592/0001-26,43611,https://www.instagram.com/fernandomotosquixeramobim/,
+Programa G30,Thais Camilo,CRV AUTOS LTDA,Rodrigo | CRV AUTOS,39.157.749/0001-82,44054,@crvautos,
+Programa G30,Thais Camilo,GRANTORINO COMERCIO DE VEICULOS LTDA,Rubens Bittencourt | Grantorino motors,27.591.409/0001-86,44320,@grantorinomotors2,https://www.instagram.com//
+Programa G30,Thais Camilo,NUMERO 1 VEICULOS LTDA,Dagner Martins |N° 1 Veículos,34.414.386/0001-08,44324,https://www.instagram.com/numero1.veiculos/,https://www.instagram.com/numero1.veiculos/
+Programa G30,Thais Camilo,CAVENAGHI VEICULOS LTDA,Junior Alaercio |Junnior Veículos,30.607.895/0001-98,44409,https://www.instagram.com/juniorveiculoss/,https://www.instagram.com//
+Programa G30,Thais Camilo,ELO CONSORCIOS LTDA,Elizabete | Elo Consórcio,20.840.105/0001-66,44848,https://www.instagram.com/eloconsorcios/,
+Programa G30,Thais Camilo,RUMMO CAR EXPERIENCE LTDA,Gustavo Santin | Rummo Car Experience,63.246.635/0001-93,44926,@rummocarsarexperience,https://www.instagram.com/rummocarexperience/
+Programa G30,Thais Camilo,PABLO CAR,PABLO CAR | PABLO,35.264.543/0001-09,45118,https://www.instagram.com/pablocar.fsa/,https://www.instagram.com/pablocar.fsa/
+Programa G30,Thais Camilo,GRACIANO MULTIMARCAS LTDA,Émerson | GRACIANO MULTIMARCAS,44.223.176/0001-88,46000,https://www.instagram.com/gracianomultimarcas?igsh=Y3NpbG1rbG15MzAw,https://www.instagram.com/gracianomultimarcas/
+Programa G30,Thais Camilo,J J F FERREIRA COMERCIO E SERVICOS,Maninho Caicó | Multicon Autos,23.466.432/0001-98,46131,https://www.instagram.com/multiconautos/,https://www.instagram.com/multiconautos/
+Programa G30,Thais Camilo,SUPER CAR VEICULOS LTDA,Lucas Maranhão |SUPER CAR VEÍCULOS,04.487.133/0001-95,46176,g,https://www.instagram.com//
+Programa G30,Thais Camilo,RGM MOTOS BRAGANCA PAULISTA LTDA,Robert Gledson | RGM Motos,54.127.178/0001-27,46206,https://www.instagram.com/rgm_motos/,
+Programa G30,Thaís Gonçalves,Smart carros,Fabio Pontoglio Cristovão | Smart carros,39.592.956/0001-65,11214,https://www.instagram.com/smart_carros/,https://www.instagram.com/smart_carros/
+Programa G30,Thaís Gonçalves,Sf santos veículos Ltda,Fábio | Pretim Veículos,486953000101,15129,https://www.instagram.com/pretimveiculos/,@pretimveiculos
+Programa G30,Thaís Gonçalves,Pescio & Pescio Ltda,Misael Pescio Junior | Correauto VW,47.572.649/0001-40,21121,https://www.instagram.com/correauto/,https://www.instagram.com/correauto/
+Programa G30,Thaís Gonçalves,Dm automóveis veículos eireli,⁠Diogo Maturano Neto | DM Automóveis,⁠18.650.016/0001-05,21993,,https://www.instagram.com//
+Programa G30,Thaís Gonçalves,REVENDOAUTO REVENDA DE AUTOMÓVEIS LIMITADA,Claudio Oliveira | Reveauto,12.902.800/0001-87,23546,https://www.instagram.com/reveautomultimarcas/,https://www.instagram.com/reveautomultimarcas/
+Programa G30,Thaís Gonçalves,TKS VEICULOS LTDA,Thiago Santos - TKS Veículos LTDA,52.643.808/0001-90,23599,https://www.instagram.com/tks.veiculos/,https://www.instagram.com/tks_veiculos/
+Programa G30,Thaís Gonçalves,RT Martins Comércio de Veículos LTDA,Thiago | Martins Carros,28.141.584/0001-34,24077,https://www.instagram.com/martinscarros/,https://www.instagram.com/martinscarros/
+Programa G30,Thaís Gonçalves,JCPALERMO COMÉRCIO DE VEÍCULOS LTDA,Maxwel Racca | ASGARD VEICULOS,54.767.830.0001-78,29511,,https://https://www.instagram.com/asgardveiculos/www.instagram.com/asgardveiculos/
+Programa G30,Thaís Gonçalves,A D M Veiculos A. F. Bonfim - Veiculos,Claudia | ADM Veículos A. F. Bonfim - Veículos,14.029.625/0001-90,32275,https://www.instagram.com/admveiculos/,https://www.instagram.com/admveiculos/
+Programa G30,Thaís Gonçalves,Celio Motors LTDA,Célio Pereira Rosa I Célio Motors,43.158.456/0001-97,33383,https://www.instagram.com/celiomotors?igsh=b3NjZm0yc2E1MDBs,https://www.instagram.com/celiomotors?igsh=b3NjZm0yc2E1MDBs
+Programa G30,Thaís Gonçalves,Toso Premium LTDA,Marcus Scauri | Toso Premium,61.706.850/0001-02,34174,https://www.instagram.com/tosopremiumcwb/,https://www.instagram.com//
+Programa G30,Thaís Gonçalves,PPL Comércio de Veículos Ltda,Marcos Pessoa | Facecar Multimarcas,37.638.481/0001-75,37851,https://www.instagram.com/facecarmultimarcas/,https://www.instagram.com/facecarmultimarcas/
+Programa G30,Thaís Gonçalves,MM Autocar,Rodrigo Molon | MM Autocar,08.809.532/0001-86,38183,@mmautocar,https://www.instagram.com/mmautocar
+Programa G30,Thaís Gonçalves,JESNER FELIPE TELLES VEICULOS,Aline Telles | Jesner Motors,33.712.161/0001-67,38200,https://www.instagram.com/jesner_motors/,https://www.instagram.com//
+Programa G30,Thaís Gonçalves,Brasil 500 Comercio de Veiculos LTDA,Adilson Costa | Forza Motors,36.349.531/0001-31,38212,@forzamotorsbr,https://www.instagram.com//
+Programa G30,Thaís Gonçalves,PEREIRA & AMADIO LTDA,Roberto Amadio | Lexus MOTORS,27.658.261/0001-50,38272,lexusmotorslimeira,https://www.instagram.com/lexusmotorslimeira
+Programa G30,Thaís Gonçalves,CESAR A. A. PINHEIRO VEICULOS ME,César Pinheiro | Texas veículos,43.393.202/0001-53,39307,https://www.instagram.com/texas_veiculos_/,
+Programa G30,Thaís Gonçalves,Stela Motos Premium,Stela Raymundo Silva | Brasil Motos,58.034.779/0001-46,39742,@Brasilmotos028,https://www.instagram.com//
+Programa G30,Thaís Gonçalves,Flow Veiculos Ltda,Flow Veículos | Rafael e Hellen,31.308.256/0001-94,40114,https://www.instagram.com/flowveiculos/,
+Programa G30,Thaís Gonçalves,AUTOGIRO COMERCIO DE VEICULOS LTDA,Fernando Sanches | Auto Giro Veículos,04.649.005/0001-09,41072,https://www.instagram.com/autogirosm/,https://www.instagram.com/autogirosm/
+Programa G30,Thaís Gonçalves,BARELA E DURANTE AUTOMOVEIS LTDA,Marcos Barela I AM Multimarcas,34092854000167,41359,https://www.instagram.com/ammultimarcascco/,https://www.instagram.com/ammultimarcascco/
+Programa G30,Thaís Gonçalves,GUILHERME MULTIMARCAS LTDA,Guilherme | GT Multimarcas,31.759.163/0001-86,41676,https://www.instagram.com/gtmultimarcas.oficial91,
+Programa G30,Thaís Gonçalves,SEU CARRO PE COMERCIO DE VEICULOS LTDA,Igor Rafael | Seu Carro PE,24.856.206/0001-86,42753,https://www.instagram.com/seucarrope/,https://www.instagram.com/seucarrope
+Programa G30,Thaís Gonçalves,AUTO SHOP MULTIMARCAS LTDA,Charles | Autoshop Multimarcas,05.819.235/0001-23,43341,https://www.instagram.com/autoshopmultimarcas?igsh=MTNoOG5qaGNiOTVzbA==,
+Programa G30,Thaís Gonçalves,FILIPE FERRAZ ESTAVARENGO,Filipe Ferraz Estavarengo | Ferraz Veículos Jundiaí,16.541.640/0001-49,44103,https://www.instagram.com/ferrazveiculosjundiai?igsh=aHB4Nzhramw0cWhq,
+Programa G30,Thaís Gonçalves,SUPREMA SEMINOVOS,Gilson Lemos Viana | Suprema Seminovos,58.448.583/0001-06,44493,https://www.instagram.com/supremaseminovos?igsh=NnJxdHlid2t3bzZr,https://www.instagram.com//
+Programa G30,Thaís Gonçalves,JOSIMAR DE CASTRO CARDOSO LTDA,Josimar | Josimar Veículos Fiat,14788318000193,44604,https://www.instagram.com/josimar_veiculos_fiat?igsh=MTNvNHpwaG96ODJrdg==,
+Programa G30,Thaís Gonçalves,Não foi possível obter a razão social deste CNPJ,Carlos e Marcia | Stock Fácil,63.845.284/0001-37,44616,https://www.instagram.com/stockfacilshineray/,https://www.instagram.com//
+Programa G30,Thaís Gonçalves,GARAGE 4 MOTORS LTDA,Jhonny Escolastica | Garage 4 Motors,36.553.109/0001-01,44854,garage4oficial,
+Programa G30,Thaís Gonçalves,R. F. ROCCHO - VEICULOS,Ricardo Roccho | Rocco Automóveis,29.508.031/0001-30,44929,https://www.instagram.com/roccoautomoveis?igsh=ZTU1aG5tOGhqamli,https://www.instagram.com//
+Programa G30,Thaís Gonçalves,COMPANY IMPORTS COMERCIO DE VEICULOS LTDA,"Roberto Coito & 
+Thailiny | COMPANY IMPORTS",38.829.904/0001-05,45150,https://www.instagram.com/company.imports.mga?igsh=MTZtNzZkNGlsM2d4ZA%3D%3D&utm_source=qr,https://www.instagram.com//
+Programa G30,Thaís Gonçalves,D DONATO I FREIRE,David Donato | Donauto Multimarcas,19.088.904/0001-49,45341,,https://www.instagram.com/donautomultimarcas/
+Programa G30,Thaís Gonçalves,SOVEPE VEICULOS LTDA,João Victor de M. Marinho | Sovepe Veículos,08.332.595/0001-94,45544,SOVEPEVEICULOS,SOVEPEVEICULOS
+Programa G30,Thaís Gonçalves,J.M.S. SERVICOS LTDA,João Batista | Riocar Veículos,04.367.107/0001-23,45675,https://www.instagram.com/riocarveiculosuba/,https://www.instagram.com//
+Programa G30,Thaís Gonçalves,AUTO SHOPPING DA CIDADE LTDA,Jose | Autoshopping da Cidade,39.276.331/0001-94,45985,https://www.instagram.com/autoshoppingdacidade?igsh=Nmk2dmIyZzVyNzhq&utm_source=qr,
+Programa G30,Thaís Gonçalves,3JM VEICULOS LTDA,Jonatas Aguiar Canuto | UAI Veículos,01.407.152/0001-76,46038,https://www.instagram.com/uaiveiculosgv?igsh=a3lidmFqODVpMW1i,https://www.instagram.com//
+Programa G30,Thaís Gonçalves,ROMA COMERCIO DE VEICULOS LTDA,Leonardo | Roma Veículos,35304174000122,46190,@romaveiculosvix,
+Programa G30,Thaís Gonçalves,MAPRI COMERCIO DE VEICULOS LTDA,Priscilla e Caio | Mapri Veículos,33.873.403/0001-02,46524,https://www.instagram.com/mapriveiculos/,https://www.instagram.com//
+Programa G30,Thaís Gonçalves,RS VEICULOS LTDA,Roberto Carvalho | RS Veículos,44.513.498/0001-61,46576,https://www.instagram.com/rsveiculossorriso?igsh=MXh2bHZvNjQ0ODFmYw%3D%3D&utm_source=qr,https://www.instagram.com//
+Programa G30,Thaís Gonçalves,MARCAO VEICULOS LTDA,Eduardo | Marcão Veículos LTDA,07.168.401/0001-02,47235,marcao__veiculos,https://www.instagram.com//
+Programa G30,Thaís Gonçalves,SPEED CAR VEICULOS LTDA,José Rodrigues | Speed Car Veículos,40.492.020/0001-41,47468,https://www.instagram.com/speedcar.veiculos/,https://www.instagram.com//
+Programa G30,Wirley Junior,André Moi Veiculos,André Luiz Moi,35.831.026/0001-66,11138,,https://www.instagram.com/andremoi2/
+Programa G30,Wirley Junior,Atual Motos,Juliano Alberto da Costa,,11157,https://www.instagram.com/julianoatualmotos/,
+Programa G30,Wirley Junior,Auts Car,Beatriz e Leonardo,,11235,https://www.instagram.com/autscarveiculos/,
+Programa G30,Wirley Junior,Ponto1,Renato Guedes Mischiatti,,11351,,
+Programa G30,Wirley Junior,Ryk Motors,Mauricio e Giovani,07.425.207/0001-57,11355,,
+Programa G30,Wirley Junior,Zilli Multimarcas,Nélson Zilli Júnior,19.285.670/0001-20,11357,,
+Programa G30,Wirley Junior,Direct Motors Ltda,William Rober Morinelli,7067019000102,11555,https://www.instagram.com/directmotorsbr/,
+Lions Car Club,Wirley Junior,Reis Magos Comercio de Veiculos LTDA,PAULO VIANNA - Unica Seminovos,27.390.708/0001-52,11800,,https://www.instagram.com/unicaseminovos/
+Programa G30,Wirley Junior,UHUU TECNOLOGIA E COMERCIO DE VEICULOS E MOTOS LTDA,Lucio,29.887.267/0001-24,13765,https://www.instagram.com/uhuuveiculos/,@uhuuveiculos
+Programa G30,Wirley Junior,Pardim Porto Comércio de Veículos LTDA,Loren Porto,26.333.402/0001-00,16589,https://www.instagram.com/multimarcas.porto/,https://www.instagram.com/multimarcas.porto/
+Programa G30,Wirley Junior,Auto Padrão Veículos Ltda,Michele Porto de Paulo,14.580.907/0001-81,16626,https://www.instagram.com/autopadraoveiculosgoiania/,https://www.instagram.com/autopadraoveiculosgoiania/
+Lions Car Club,Wirley Junior,BARATÍSSIMO VEÍCULOS LTDA.,SANDRO DINIZ VIDAL |Baratíssimo Veículos,48.178.090/0001-31,16640,https://www.instagram.com/baratissimoveiculos/,https://www.instagram.com/shineray_bh_abiliomachado/
+Lions Car Club,Wirley Junior,martinauto comercio de veiculos ltda,Leonardo martini,00.027.164/0001-02,17901,@martinimotors.ofertas,@martinimotors
+Programa G30,Wirley Junior,Fm Empreendimentos e Participacoes LTDA,Carlos | 3R Seminovos,22010260000180,18295,,https://www.instagram.com//
+Programa G30,Wirley Junior,VEICOL VEICULOS LTDA,Danilo Pretti | Veicol Veículos,41.316.577/0001-94,18505,veicolveiculos,veicolveiculos
+Programa G30,Wirley Junior,Auto Esporte Multimarcas,Eli dos Santos - Autoesporte(fenauto),18.727.923/0001-05,18878,,
+Programa G30,Wirley Junior,autotres comercio de veiculos ltda,Denis | Auto Três Veiculos,43019685000120,21760,https://www.instagram.com/autotresveiculos/,
+Programa G30,Wirley Junior,RS Motors Comércio de Veículos LTDA,Renata e Ricardo Santolia | RS Motors,35767832000112,22830,https://www.instagram.com/rsmotors1btu/,https://www.instagram.com/rsmotors1.com.br/
+Programa G30,Wirley Junior,W P D L LTDA,Weslei Disposti | W2 Motors,42.780.799/0001-26,23549,https://www.instagram.com/w2motors/,
+Programa G30,Wirley Junior,Maná Motors LTDA,Alex Giotti | Mana Motors,54.091.212/0001-50,23595,,
+Programa G30,Wirley Junior,Everton de Lima Bezerra Veículos,Everton | Innova Veículos,24.593.593 000105,23602,https://www.instagram.com/veiculosinnova/,https://www.instagram.com/veiculosinnova/
+Programa G30,Wirley Junior,Central Veículos Cabo Frio Ltda,Ralph e Amélia | wm.veiculoscabofrio WM Veiculos,42.584.059/0001-14,24137,https://www.instagram.com/wm.veiculoscabofrio/,@wm.veiculoscabofrio
+Programa G30,Wirley Junior,Premium Lago Automóveis Ltda,Marco | Auto Premium Automóveis Ltda,57.929.091/0001-61,24283,,https://www.instagram.com//
+Programa G30,Wirley Junior,Blue Comercio de Veiculos ltda,Fabio | Unimais Veículos,14.239.814/0001-98,25035,https://www.instagram.com/unimais_veiculos/,https://www.instagram.com/unimais_veiculos/
+Programa G30,Wirley Junior,Maverick Automoveis Ltda,Leonardo Oliveira| Maverick Automóveis Ltda,23.708.650/0001-91,29437,,https://www.instagram.com//https://www.instagram.com/maverickautomoveis/
+Programa G30,Wirley Junior,BRAVO VEICULOS LTDA,gabriel_bravoalmeida@hotmail.com - Gabriel,32.694.992/0001-90,41410,@bravoveiculos,
+Lions Car Club,Wirley Junior,Personalitte comércio e intermediações de veiculos ltda epp,Personalitte comércio e intermediações de veiculos ltda epp,33.108.056/0001-13,44092,https://www.instagram.com/Personalitte.veiculos/,https://www.instagram.com/Personalitte.veiculos/
+Programa G30,Wirley Junior,TKS VEICULOS LTDA,TKS VEICULOS LTDA,52.643.808/0001-90,45909,,https://www.instagram.com/tks_veiculos/
+Programa G30,Wirley Junior,BOSS MOTORS VEICULOS LTDA,BOSS MOTORS VEICULOS LTDA,19.650.596/0001-01,46298,.,
+Programa G30,Wirley Junior,BOSS MOTORS VEICULOS LTDA,BOSS MOTORS VEICULOS LTDA,19.650.596/0001-01,46693,.,
+Programa G30,Wirley Junior,AUTOFORTE COMERCIO DE VEICULOS LTDA,AUTOFORTE COMERCIO DE VEICULOS LTDA,10.696.802/0001-31,47643,https://www.instagram.com/autoforte/,https://www.instagram.com//</script>
+
+    <script>
+        // Função robusta para lidar com parsing de CSV (incluindo quebras de linha/vírgulas dentro de aspas)
+        function csvToArray(text) {
+            let p = '', row = [''], ret = [row], i = 0, r = 0, s = !0, l;
+            for (l of text) {
+                if ('"' === l) {
+                    if (s && l === p) row[i] += l;
+                    s = !s;
+                } else if (',' === l && s) l = row[++i] = '';
+                else if ('\n' === l && s) {
+                    if ('\r' === p) row[i] = row[i].slice(0, -1);
+                    row = ret[++r] = [l = '']; i = 0;
+                } else row[i] += l;
+                p = l;
+            }
+            return ret.filter(r => r.length > 1 || r[0].trim() !== '');
+        }
+
+        // Formatação do link do Instagram
+        function formatInstagramLink(link1, link2) {
+            let finalLink = link1 ? link1.trim() : (link2 ? link2.trim() : '');
+            
+            // Lógica de limpeza para atalhos quebrados
+            if (!finalLink || finalLink === '.' || finalLink === 'd' || finalLink === 'g' || finalLink === 'sad') {
+                return '<span class="text-forest-800 italic font-medium">Não informado</span>';
+            }
+            
+            // Remove lixo comum (múltiplas barras, etc)
+            finalLink = finalLink.replace(/https:\/\/www\.instagram\.com\/\//g, 'https://www.instagram.com/');
+
+            // Formatação do endereço final
+            if (!finalLink.startsWith('http')) {
+                let username = finalLink.startsWith('@') ? finalLink.substring(1) : finalLink;
+                // Previne links loucos que contêm vários "https" concatenados
+                if(username.indexOf('http') > -1) {
+                    finalLink = username.split('http')[1];
+                    finalLink = 'http' + finalLink;
+                } else {
+                    finalLink = `https://www.instagram.com/${username}`;
+                }
+            }
+
+            return `
+                <a href="${finalLink}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-forest-accent hover:text-emerald-300 bg-[#0d1c13] hover:bg-[#152e1f] border border-forest-800 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-all duration-200 ease-in-out hover:shadow-[0_0_12px_rgba(16,185,129,0.15)]">
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z" clip-rule="evenodd" /></svg>
+                    Aceder
+                </a>`;
+        }
+
+        // Função para formatar uma badge de programa
+        function formatBadge(texto) {
+            if (texto.toLowerCase().includes('lions')) {
+                return `<span class="bg-[#1a1405] text-[#d97706] text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded border border-[#452a0a] shadow-sm">${texto}</span>`;
+            }
+            return `<span class="bg-[#06180f] text-emerald-500 text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded border border-emerald-900/50 shadow-sm">${texto}</span>`;
+        }
+
+        function initTable() {
+            // Pegar todos os dados CSV do bloco script e limpar a tag 
+            const rawCsv = document.getElementById('csvData').textContent;
+            const cleanedCsv = rawCsv.replace(/\\s*/g, ''); // Corrigido a limpeza que estava em falta
+            const parsedRows = csvToArray(cleanedCsv);
+            
+            // Remover o cabeçalho (index 0)
+            const rows = parsedRows.slice(1);
+            const tbody = document.getElementById('tableBody');
+            
+            rows.forEach(row => {
+                if(row.length >= 6 && row[0].trim() !== '') {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-[#0c1810] transition-colors group cursor-default";
+                    
+                    const programa = row[0];
+                    const proprietario = row[1];
+                    const loja = row[2];
+                    const cnpj = row[4] || '-';
+                    const id = row[5] || '-';
+                    const instaLoja = row[6] || '';
+                    const instaPessoa = row[7] || '';
+
+                    tr.innerHTML = `
+                        <td class="px-6 py-4">${formatBadge(programa)}</td>
+                        <td class="px-6 py-4 font-semibold text-forest-light group-hover:text-forest-accent transition-colors">${proprietario}</td>
+                        <td class="px-6 py-4 text-slate-300 font-medium">${loja}</td>
+                        <td class="px-6 py-4 text-emerald-200/50 font-mono text-xs tracking-wider">${cnpj}</td>
+                        <td class="px-6 py-4 text-emerald-200/50 font-mono text-xs tracking-wider">#${id}</td>
+                        <td class="px-6 py-4 text-center">${formatInstagramLink(instaLoja, instaPessoa)}</td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+            });
+
+            updateCount();
+        }
+
+        // Lógica de pesquisa melhorada com visual state
+        function filterTable() {
+            const input = document.getElementById("searchInput");
+            const filter = input.value.toLowerCase();
+            const table = document.getElementById("clientsTable");
+            const tr = table.getElementsByTagName("tr");
+            let count = 0;
+
+            for (let i = 1; i < tr.length; i++) {
+                let rowText = tr[i].textContent || tr[i].innerText;
+                if (rowText.toLowerCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                    count++;
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+            
+            document.getElementById('countDisplay').innerText = `A mostrar ${count} clientes`;
+            
+            // Controlar visibilidade do estado vazio vs tabela
+            const emptyState = document.getElementById('emptyState');
+            if (count === 0) {
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+                table.classList.add('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                emptyState.classList.remove('flex');
+                table.classList.remove('hidden');
+            }
+        }
+
+        function updateCount() {
+            const tr = document.querySelectorAll("#tableBody tr");
+            document.getElementById('countDisplay').innerText = `Total: ${tr.length} clientes`;
+        }
+
+        // Run when DOM loads
+        document.addEventListener('DOMContentLoaded', initTable);
+    </script>
+</body>
+</html>
