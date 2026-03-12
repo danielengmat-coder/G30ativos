@@ -5,88 +5,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de Clientes Ativos</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        forest: {
-                            950: '#040906', /* Fundo profundo Preto Forrest */
-                            900: '#09120c', /* Fundo de painéis e cards */
-                            800: '#122217', /* Bordas elegantes e hovers */
-                            accent: '#10b981', /* Verde esmeralda elegante */
-                            light: '#ecfdf5', /* Texto principal brilhante */
-                        }
-                    }
-                }
-            }
-        }
-    </script>
     <style>
-        /* Custom scrollbar for better appearance */
+        /* Custom scrollbar for better appearance in dark mode */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: #040906; 
+            background: #09090b; 
         }
         ::-webkit-scrollbar-thumb {
-            background: #122217; 
+            background: #27272a; 
             border-radius: 4px;
-            border: 1px solid #040906;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #1b3323; 
+            background: #f97316; /* Laranja no hover da barra */
         }
         .table-container {
             max-height: calc(100vh - 200px);
         }
     </style>
 </head>
-<body class="bg-forest-950 text-slate-300 font-sans antialiased p-4 md:p-8 selection:bg-forest-accent selection:text-white">
+<body class="bg-zinc-950 text-zinc-300 font-sans antialiased p-4 md:p-8 selection:bg-orange-500/30 selection:text-orange-200">
 
     <div class="max-w-7xl mx-auto space-y-6">
         <!-- Header Section -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-forest-900 p-6 rounded-2xl shadow-2xl border border-forest-800 relative overflow-hidden">
-            <!-- Efeito de brilho subtil de fundo -->
-            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-forest-accent to-transparent opacity-20"></div>
-            
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-zinc-900 p-6 rounded-2xl shadow-xl border border-zinc-800 relative overflow-hidden">
+            <!-- Linha decorativa laranja no topo -->
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-600 via-orange-400 to-orange-600"></div>
+
             <div class="relative z-10">
-                <h1 class="text-2xl font-bold text-forest-light tracking-tight">Lista de Clientes Ativos</h1>
-                <p class="text-sm text-emerald-200/60 mt-1">Gere e pesquise os clientes G30 e Lions Car Club</p>
+                <h1 class="text-2xl font-bold text-white tracking-tight">Lista de Clientes Ativos</h1>
+                <p class="text-sm text-zinc-400 mt-1">Gere e pesquise os clientes G30 e Lions Car Club</p>
             </div>
             
             <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto relative z-10">
                 <div class="relative w-full md:w-80">
                     <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                        <svg class="w-4 h-4 text-emerald-700" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                        <svg class="w-4 h-4 text-orange-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
                         </svg>
                     </div>
-                    <input type="text" id="searchInput" class="bg-forest-950 border border-forest-800 text-forest-light text-sm rounded-lg focus:ring-forest-accent focus:border-forest-accent block w-full pl-10 p-2.5 transition-colors shadow-inner placeholder-emerald-800/60" placeholder="Pesquisar loja, proprietário, CNPJ..." onkeyup="filterTable()">
+                    <input type="text" id="searchInput" class="bg-zinc-950 border border-zinc-800 text-white text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full pl-10 p-2.5 transition-colors shadow-inner placeholder-zinc-600" placeholder="Pesquisar loja, proprietário, CNPJ..." onkeyup="filterTable()">
                 </div>
-                <div class="flex items-center justify-center bg-forest-800/60 text-forest-accent text-sm font-semibold px-4 py-2 rounded-lg border border-forest-800 whitespace-nowrap shadow-sm backdrop-blur-sm">
+                <div class="flex items-center justify-center bg-orange-500/10 text-orange-500 text-sm font-semibold px-4 py-2 rounded-lg border border-orange-500/20 whitespace-nowrap shadow-sm">
                     <span id="countDisplay">A carregar...</span>
                 </div>
             </div>
         </div>
 
         <!-- Table Section -->
-        <div class="bg-forest-900 rounded-2xl shadow-2xl border border-forest-800 overflow-hidden">
+        <div class="bg-zinc-900 rounded-2xl shadow-xl border border-zinc-800 overflow-hidden">
             <div class="overflow-x-auto table-container">
-                <table id="clientsTable" class="w-full text-sm text-left text-slate-300">
-                    <thead class="text-xs text-emerald-600/80 uppercase tracking-wider bg-[#070e0a] sticky top-0 shadow-md border-b border-forest-800 z-10">
+                <table id="clientsTable" class="w-full text-sm text-left text-zinc-400">
+                    <thead class="text-xs text-zinc-400 uppercase tracking-wider bg-zinc-950/80 backdrop-blur-sm sticky top-0 shadow-sm border-b border-zinc-800 z-10">
                         <tr>
                             <th scope="col" class="px-6 py-4 font-semibold whitespace-nowrap">Programa</th>
                             <th scope="col" class="px-6 py-4 font-semibold whitespace-nowrap">Proprietário</th>
                             <th scope="col" class="px-6 py-4 font-semibold whitespace-nowrap">Nome da Loja</th>
                             <th scope="col" class="px-6 py-4 font-semibold whitespace-nowrap">CNPJ</th>
-                            <th scope="col" class="px-6 py-4 font-semibold whitespace-nowrap">ID</th>
+                            <th scope="col" class="px-6 py-4 font-semibold whitespace-nowrap">ID CRM</th>
                             <th scope="col" class="px-6 py-4 font-semibold whitespace-nowrap text-center">Instagram</th>
                         </tr>
                     </thead>
-                    <tbody id="tableBody" class="divide-y divide-forest-800">
+                    <tbody id="tableBody" class="divide-y divide-zinc-800/50">
                         <!-- Os dados serão injetados aqui -->
                     </tbody>
                 </table>
@@ -94,17 +76,41 @@
             
             <!-- Empty State -->
             <div id="emptyState" class="hidden flex-col items-center justify-center py-16 px-4 text-center">
-                <div class="bg-forest-800/30 p-4 rounded-full mb-4 border border-forest-800/50">
-                    <svg class="w-10 h-10 text-emerald-700/50" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <div class="bg-zinc-800/50 p-4 rounded-full mb-4 border border-zinc-700/50">
+                    <svg class="w-10 h-10 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </div>
-                <h3 class="text-lg font-medium text-forest-light">Nenhum cliente encontrado</h3>
-                <p class="text-sm text-emerald-200/50 mt-1">Tente utilizar outros termos de pesquisa.</p>
+                <h3 class="text-lg font-medium text-white">Nenhum cliente encontrado</h3>
+                <p class="text-sm text-zinc-500 mt-1">Tente utilizar outros termos de pesquisa.</p>
             </div>
         </div>
     </div>
 
     <!-- Ocultamos os dados em bruto num script block para não interferir com a UI -->
     <script type="text/csv" id="csvData">
+Negócio - [FIN] Produto,Negócio - Proprietário,Negócio - [FIN] Nome da loja,Negócio - Título,Negócio - [FIN] CNPJ,Negócio - ID,Negócio - [FORM] Instagram,Pessoa - Instagram 
+Programa G30,Alexandre Boaventura,26.753.976 LEANDRO ALVES FERREIRA DOS SANTOS,26.753.976 LEANDRO ALVES FERREIRA DOS SANTOS,26.753.976/0001-29,40561,,https://www.instagram.com//
+Programa G30,Ana Carolina Medeiros,H de Oliveira Felix LTDA,Hiran Felix | Hiran Veiculos,20.683.031/0001-00,11204,https://www.instagram.com/hiranveiculoscaico/,https://www.instagram.com/hiranveiculoscaico/
+Programa G30,Ana Carolina Medeiros,RJ CAR DE MERITI AUTOMOVEIS LTDA,André Luiz I Comfort Auto,218570640001 83,11345,,
+Programa G30,Ana Carolina Medeiros,MASSALAI COMERCIO DE VEICULOS LTDA,Altair Massalai,07.502.828/0001-97,11378,https://www.instagram.com/massalaiveiculos/,https://www.instagram.com/massalaiveiculos/
+Programa G30,Ana Carolina Medeiros,Borges Caminhões,Pedro BORGES CAMINHOES,31.172.107/0001-40,11601,https://www.instagram.com/borges_veiculosecaminhoes/,https://www.instagram.com/borges_veiculosecaminhoes/
+Programa G30,Ana Carolina Medeiros,AUTOFORTE COMERCIO DE VEICULOS LTDA,MICHEL CRISTIAN MALARA - AUTOFORTE COMERCIO DE VEICULOS LTDA,10.696.802/0001-31,23398,https://www.instagram.com/autoforte/,https://www.instagram.com//
+Programa G30,Ana Carolina Medeiros,Chama veículos Ltda,Marcelo e Ediléia I Chama Veículos,66.368.200/0001-00,28916,https://www.instagram.com/chamaveiculosbh/,https://www.instagram.com/chamaveiculos/
+Programa G30,Ana Carolina Medeiros,"Grupo J.l Transportes, Comercio e Servicos LTDA",Phyllipe I Pacheco Veículos,21.388.084/0001-52,33391,@pachecoveiculos,https://www.instagram.com/pachecoveiculos/
+Programa G30,Ana Carolina Medeiros,CONFIANCE AUTOMOVEIS,Laercio e Marli I Confiance,31.964.388/0001-74,33960,@confiance_automoveis,https://www.instagram.com//
+Programa G30,Ana Carolina Medeiros,Soccol Veículos LTDA,Bruno e Juliano / Soccol Veículos,80.207.152/0001-07,34253,https://www.instagram.com/soccolveiculos/,https://www.instagram.com/soccolveiculos/
+Programa G30,Ana Carolina Medeiros,S D MULTIMARCAS,Idimar I Mazinho I SD Multimarcas,57.719.588/0001-55,34605,,
+Programa G30,Ana Carolina Medeiros,LUCAS MULTIMARCAS LTDA,Lucas e Cristiane I Lucas Multimarcas,29.571.529/0001-47,34907,https://www.instagram.com/lucasmultimarcasrg/,https://www.instagram.com//
+Programa G30,Ana Carolina Medeiros,Adriana Mello Bernardes Ltda,Rudinei I Visão Multimarcas,16.538.034/0001-74,34992,https://www.instagram.com/visaomultimarcaspel/,https://www.instagram.com/visão Multimarcas/
+Programa G30,Ana Carolina Medeiros,WCJ VEÍCULOS LTDA,Wilson Junior I Junior Veículos,43.474.498/0001-37,35092,https://www.instagram.com/juniorveiculoss/,
+Programa G30,Ana Carolina Medeiros,Confiauto Multimarcas,Maikon I Confiauto,30.547.915/0001-82,35152,https://www.instagram.com/confiautomultimarcas?igsh=MXNvd2Q5c3F4c2kyMQ%3D%3D&utm_source=qr,https://www.instagram.com//
+Programa G30,Ana Carolina Medeiros,Machados Multimarcas,Douglas I Machado's,40.523.316/0001-82,35430,https://www.instagram.com/machados_multimarcas/,
+Programa G30,Ana Carolina Medeiros,Danilo Rainho Raposo LTDA,Danilo | Premium Auto Car,31.164.532/0001-98,37247,https://www.instagram.com/premium_autocar/,https://www.instagram.com//
+Programa G30,Ana Carolina Medeiros,MARCOS REVENDEDORA DE VEICULOS LTDA,Marcos I Grupo Marcos,08.705.538/0001-03,37669,,Marcosveiculolider
+Programa G30,Ana Carolina Medeiros,Marassato Gois Veículos e serviços Ltda,Thiago I MG Veículos,50.068.167/0001-62,38202,https://www.instagram.com/mgveiculos04/,
+Programa G30,Ana Carolina Medeiros,Baldo Motors Comércio de Veículos Ltda,Paulo Baldo | Baldo e Destaque,52.253.391/0001-50,38304,,
+Programa G30,Ana Carolina Medeiros,Itália Veículos Ltda,Farley I Itália Veículos,33.765.133/0001-08,38749,https://www.instagram.com/italiaveiculosvni/,
+Programa G30,Ana Carolina Medeiros,Dalgallo Autos LTDA,Andre I Dalgallo Autos,01.395.216/0001-66,39398,https://www.instagram.com/dalgallomotors?igsh=bGY0aWo4ZHdlN3Rt,https://www.instagram.com//
+Programa G30,Ana Carolina Medeiros,Garagem Moderna Veiculos LTDA,Jose Paulo I Garagem Moderna,43.480.926/0001-34,39545,@garagem.moderna.es,https://www.instagram.com//
 Programa G30,Ana Carolina Medeiros,Jorge Eduardo Moreira & CIA LTDA-ME,Jorge Eduardo I Du Veículos,09.474.963/0001-00,40027,https://www.instagram.com/du.veiculos/,https://www.instagram.com/du.veiculos/
 Programa G30,Ana Carolina Medeiros,Dante Comercio de Automoveis LTDA,Kauan I Dante Automóveis,42.945.556/0001-09,40054,@danteautomoveisbtu,https://www.instagram.com//
 Programa G30,Ana Carolina Medeiros,STARK MOTORS LTDA,Arthur I STARK MOTORS,57.081.836/0001-85,40763,starkmotors.ura,https://www.instagram.com//
@@ -514,8 +520,7 @@ Programa G30,Thaís Gonçalves,JOSIMAR DE CASTRO CARDOSO LTDA,Josimar | Josimar 
 Programa G30,Thaís Gonçalves,Não foi possível obter a razão social deste CNPJ,Carlos e Marcia | Stock Fácil,63.845.284/0001-37,44616,https://www.instagram.com/stockfacilshineray/,https://www.instagram.com//
 Programa G30,Thaís Gonçalves,GARAGE 4 MOTORS LTDA,Jhonny Escolastica | Garage 4 Motors,36.553.109/0001-01,44854,garage4oficial,
 Programa G30,Thaís Gonçalves,R. F. ROCCHO - VEICULOS,Ricardo Roccho | Rocco Automóveis,29.508.031/0001-30,44929,https://www.instagram.com/roccoautomoveis?igsh=ZTU1aG5tOGhqamli,https://www.instagram.com//
-Programa G30,Thaís Gonçalves,COMPANY IMPORTS COMERCIO DE VEICULOS LTDA,"Roberto Coito & 
-Thailiny | COMPANY IMPORTS",38.829.904/0001-05,45150,https://www.instagram.com/company.imports.mga?igsh=MTZtNzZkNGlsM2d4ZA%3D%3D&utm_source=qr,https://www.instagram.com//
+Programa G30,Thaís Gonçalves,COMPANY IMPORTS COMERCIO DE VEICULOS LTDA,"Roberto Coito & Thailiny | COMPANY IMPORTS",38.829.904/0001-05,45150,https://www.instagram.com/company.imports.mga?igsh=MTZtNzZkNGlsM2d4ZA%3D%3D&utm_source=qr,https://www.instagram.com//
 Programa G30,Thaís Gonçalves,D DONATO I FREIRE,David Donato | Donauto Multimarcas,19.088.904/0001-49,45341,,https://www.instagram.com/donautomultimarcas/
 Programa G30,Thaís Gonçalves,SOVEPE VEICULOS LTDA,João Victor de M. Marinho | Sovepe Veículos,08.332.595/0001-94,45544,SOVEPEVEICULOS,SOVEPEVEICULOS
 Programa G30,Thaís Gonçalves,J.M.S. SERVICOS LTDA,João Batista | Riocar Veículos,04.367.107/0001-23,45675,https://www.instagram.com/riocarveiculosuba/,https://www.instagram.com//
@@ -556,10 +561,10 @@ Lions Car Club,Wirley Junior,Personalitte comércio e intermediações de veicul
 Programa G30,Wirley Junior,TKS VEICULOS LTDA,TKS VEICULOS LTDA,52.643.808/0001-90,45909,,https://www.instagram.com/tks_veiculos/
 Programa G30,Wirley Junior,BOSS MOTORS VEICULOS LTDA,BOSS MOTORS VEICULOS LTDA,19.650.596/0001-01,46298,.,
 Programa G30,Wirley Junior,BOSS MOTORS VEICULOS LTDA,BOSS MOTORS VEICULOS LTDA,19.650.596/0001-01,46693,.,
-Programa G30,Wirley Junior,AUTOFORTE COMERCIO DE VEICULOS LTDA,AUTOFORTE COMERCIO DE VEICULOS LTDA,10.696.802/0001-31,47643,https://www.instagram.com/autoforte/,https://www.instagram.com//</script>
+Programa G30,Wirley Junior,AUTOFORTE COMERCIO DE VEICULOS LTDA,AUTOFORTE COMERCIO DE VEICULOS LTDA,10.696.802/0001-31,47643,https://www.instagram.com/autoforte/,https://www.instagram.com//
+</script>
 
     <script>
-        // Função robusta para lidar com parsing de CSV (incluindo quebras de linha/vírgulas dentro de aspas)
         function csvToArray(text) {
             let p = '', row = [''], ret = [row], i = 0, r = 0, s = !0, l;
             for (l of text) {
@@ -576,22 +581,17 @@ Programa G30,Wirley Junior,AUTOFORTE COMERCIO DE VEICULOS LTDA,AUTOFORTE COMERCI
             return ret.filter(r => r.length > 1 || r[0].trim() !== '');
         }
 
-        // Formatação do link do Instagram
         function formatInstagramLink(link1, link2) {
             let finalLink = link1 ? link1.trim() : (link2 ? link2.trim() : '');
             
-            // Lógica de limpeza para atalhos quebrados
             if (!finalLink || finalLink === '.' || finalLink === 'd' || finalLink === 'g' || finalLink === 'sad') {
-                return '<span class="text-forest-800 italic font-medium">Não informado</span>';
+                return '<span class="text-zinc-500 italic font-medium">Não informado</span>';
             }
             
-            // Remove lixo comum (múltiplas barras, etc)
             finalLink = finalLink.replace(/https:\/\/www\.instagram\.com\/\//g, 'https://www.instagram.com/');
 
-            // Formatação do endereço final
             if (!finalLink.startsWith('http')) {
                 let username = finalLink.startsWith('@') ? finalLink.substring(1) : finalLink;
-                // Previne links loucos que contêm vários "https" concatenados
                 if(username.indexOf('http') > -1) {
                     finalLink = username.split('http')[1];
                     finalLink = 'http' + finalLink;
@@ -601,34 +601,63 @@ Programa G30,Wirley Junior,AUTOFORTE COMERCIO DE VEICULOS LTDA,AUTOFORTE COMERCI
             }
 
             return `
-                <a href="${finalLink}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-forest-accent hover:text-emerald-300 bg-[#0d1c13] hover:bg-[#152e1f] border border-forest-800 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-all duration-200 ease-in-out hover:shadow-[0_0_12px_rgba(16,185,129,0.15)]">
+                <a href="${finalLink}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-orange-500 hover:text-orange-400 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-all duration-200 ease-in-out">
                     <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z" clip-rule="evenodd" /></svg>
                     Aceder
                 </a>`;
         }
 
-        // Função para formatar uma badge de programa
         function formatBadge(texto) {
             if (texto.toLowerCase().includes('lions')) {
-                return `<span class="bg-[#1a1405] text-[#d97706] text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded border border-[#452a0a] shadow-sm">${texto}</span>`;
+                return `<span class="bg-amber-500/10 text-amber-500 text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded border border-amber-500/20 shadow-sm">${texto}</span>`;
             }
-            return `<span class="bg-[#06180f] text-emerald-500 text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded border border-emerald-900/50 shadow-sm">${texto}</span>`;
+            return `<span class="bg-zinc-800 text-zinc-300 text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded border border-zinc-700 shadow-sm">${texto}</span>`;
+        }
+
+        function formatCrmLink(id) {
+            if (!id || id === '-' || id.trim() === '') {
+                return '<span class="text-zinc-600">-</span>';
+            }
+            const cleanId = id.trim();
+            const url = `https://gwebcarconsultoriaemarketingautomotivo.pipedrive.com/deal/${cleanId}`;
+            return `
+                <a href="${url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-orange-500 hover:text-orange-400 hover:underline transition-colors" title="Abrir no Pipedrive">
+                    #${cleanId}
+                    <svg class="w-3 h-3 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                </a>
+            `;
+        }
+
+        // Formatador inteligente de CNPJ
+        function formatCnpjMask(cnpj) {
+            if (!cnpj || cnpj === '-' || cnpj.trim() === '') {
+                return '<span class="text-zinc-600">-</span>';
+            }
+            
+            const digits = cnpj.replace(/\D/g, '');
+            
+            if (digits.length === 14) {
+                const masked = digits.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+                return `<span class="font-mono text-xs tracking-wider text-zinc-300">${masked}</span>`;
+            } else if (digits.length > 0 && digits.length !== 14) {
+                return `<span class="font-mono text-xs tracking-wider text-red-400 font-bold bg-red-500/10 px-2 py-0.5 rounded border border-red-500/20" title="CNPJ Incompleto/Inválido: Possui ${digits.length} dígitos em vez de 14.">${cnpj} ⚠️</span>`;
+            } else {
+                return `<span class="text-xs font-semibold text-red-400 bg-red-500/10 px-2 py-0.5 rounded border border-red-500/20" title="Valor não é um CNPJ válido">${cnpj} ⚠️</span>`;
+            }
         }
 
         function initTable() {
-            // Pegar todos os dados CSV do bloco script e limpar a tag 
             const rawCsv = document.getElementById('csvData').textContent;
-            const cleanedCsv = rawCsv.replace(/\\s*/g, ''); // Corrigido a limpeza que estava em falta
+            const cleanedCsv = rawCsv.replace(/\\s*/g, '');
             const parsedRows = csvToArray(cleanedCsv);
             
-            // Remover o cabeçalho (index 0)
             const rows = parsedRows.slice(1);
             const tbody = document.getElementById('tableBody');
             
             rows.forEach(row => {
                 if(row.length >= 6 && row[0].trim() !== '') {
                     const tr = document.createElement('tr');
-                    tr.className = "hover:bg-[#0c1810] transition-colors group cursor-default";
+                    tr.className = "hover:bg-zinc-800 transition-colors group cursor-default";
                     
                     const programa = row[0];
                     const proprietario = row[1];
@@ -640,10 +669,10 @@ Programa G30,Wirley Junior,AUTOFORTE COMERCIO DE VEICULOS LTDA,AUTOFORTE COMERCI
 
                     tr.innerHTML = `
                         <td class="px-6 py-4">${formatBadge(programa)}</td>
-                        <td class="px-6 py-4 font-semibold text-forest-light group-hover:text-forest-accent transition-colors">${proprietario}</td>
-                        <td class="px-6 py-4 text-slate-300 font-medium">${loja}</td>
-                        <td class="px-6 py-4 text-emerald-200/50 font-mono text-xs tracking-wider">${cnpj}</td>
-                        <td class="px-6 py-4 text-emerald-200/50 font-mono text-xs tracking-wider">#${id}</td>
+                        <td class="px-6 py-4 font-semibold text-white group-hover:text-orange-500 transition-colors">${proprietario}</td>
+                        <td class="px-6 py-4 text-zinc-300 font-medium">${loja}</td>
+                        <td class="px-6 py-4">${formatCnpjMask(cnpj)}</td>
+                        <td class="px-6 py-4">${formatCrmLink(id)}</td>
                         <td class="px-6 py-4 text-center">${formatInstagramLink(instaLoja, instaPessoa)}</td>
                     `;
                     tbody.appendChild(tr);
@@ -653,7 +682,6 @@ Programa G30,Wirley Junior,AUTOFORTE COMERCIO DE VEICULOS LTDA,AUTOFORTE COMERCI
             updateCount();
         }
 
-        // Lógica de pesquisa melhorada com visual state
         function filterTable() {
             const input = document.getElementById("searchInput");
             const filter = input.value.toLowerCase();
@@ -673,7 +701,6 @@ Programa G30,Wirley Junior,AUTOFORTE COMERCIO DE VEICULOS LTDA,AUTOFORTE COMERCI
             
             document.getElementById('countDisplay').innerText = `A mostrar ${count} clientes`;
             
-            // Controlar visibilidade do estado vazio vs tabela
             const emptyState = document.getElementById('emptyState');
             if (count === 0) {
                 emptyState.classList.remove('hidden');
@@ -691,7 +718,6 @@ Programa G30,Wirley Junior,AUTOFORTE COMERCIO DE VEICULOS LTDA,AUTOFORTE COMERCI
             document.getElementById('countDisplay').innerText = `Total: ${tr.length} clientes`;
         }
 
-        // Run when DOM loads
         document.addEventListener('DOMContentLoaded', initTable);
     </script>
 </body>
